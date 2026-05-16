@@ -2,13 +2,13 @@
   "name": "hekkyaty-production",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
+  "private": true,
   "scripts": {
     "install-all": "npm install",
     "build": "npm run build:api && npm run build:client",
     "build:api": "cd artifacts/api-server && npm run build",
     "build:client": "cd artifacts/clickers && npm run build",
-    "start": "node dist-server/index.mjs"
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "^5.0.0",
