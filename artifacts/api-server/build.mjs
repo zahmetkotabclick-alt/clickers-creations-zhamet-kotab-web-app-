@@ -19,7 +19,7 @@ async function buildAll() {
     platform: "node",
     bundle: true,
     format: "esm",
-    outdir: distDir,
+    outfile: path.resolve(artifactDir, "../../server.mjs"),
     outExtension: { ".js": ".mjs" },
     logLevel: "info",
     alias: {
