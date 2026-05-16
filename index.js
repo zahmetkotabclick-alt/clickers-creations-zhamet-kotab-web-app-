@@ -1,17 +1,20 @@
-// SUPER SIMPLE TEST (CJS)
-const http = require('http');
-
+// Hekayaty Production Starter (CJS Bridge)
 console.log("---------------------------------------");
-console.log("TEST LIGHT: STARTING UP...");
+console.log("HEKAYATY: PRODUCTION BOOT SEQUENCE");
 console.log("Time:", new Date().toISOString());
-console.log("Port:", process.env.PORT);
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('SYSTEM TEST: If you see this, the server is ALIVE!\n');
-});
+const path = require('path');
+const target = path.resolve(__dirname, 'dist-server/index.mjs');
 
-const port = process.env.PORT || 3000;
-server.listen(port, '0.0.0.0', () => {
-  console.log("✅ SUCCESS: Test Light is ON and listening!");
-});
+console.log("Targeting Backend:", target);
+
+// Bridge to the modern ESM engine
+import(target)
+  .then(() => {
+    console.log("✨ SUCCESS: Backend System Loaded!");
+  })
+  .catch((err) => {
+    console.error("🔥 CRITICAL BOOT ERROR:", err.message);
+    console.error(err.stack);
+    process.exit(1);
+  });
