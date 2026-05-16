@@ -87,7 +87,7 @@ app.use(express.static(clientPath));
 
 // ── PRODUCTION: Catch-all route for React SPA
 // This ensures that refreshing the page on /books or /profile works correctly
-app.get("/:path*", (req, res) => {
+app.get("/:path(.*)", (req, res) => {
   if (!req.path.startsWith("/api")) {
     res.sendFile(path.join(clientPath, "index.html"));
   }
