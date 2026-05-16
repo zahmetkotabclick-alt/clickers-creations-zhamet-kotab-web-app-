@@ -4,9 +4,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "install-all": "pnpm install",
-    "build": "pnpm -r run build",
-    "start": "node artifacts/api-server/dist/index.mjs"
+    "install-all": "npm install",
+    "build": "npm run build:api && npm run build:client",
+    "build:api": "cd artifacts/api-server && npm run build",
+    "build:client": "cd artifacts/clickers && npm run build",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^5.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "pino": "^9.0.0",
+    "pino-http": "^9.0.0",
+    "compression": "^1.7.4",
+    "helmet": "^7.1.0",
+    "path": "^0.12.7",
+    "url": "^0.11.3"
   },
   "engines": {
     "node": ">=18.0.0"
