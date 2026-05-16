@@ -2,7 +2,6 @@
   "name": "hekkyaty-production",
   "version": "1.0.0",
   "private": true,
-  "private": true,
   "scripts": {
     "install-all": "npm install",
     "build": "npm run build:api && npm run build:client",
