@@ -1,0 +1,17 @@
+{
+  "name": "hekkyaty-production",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install-all": "pnpm install",
+    "build": "pnpm -r run build",
+    "start": "node artifacts/api-server/dist/index.mjs"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2"
+  }
+}
