@@ -82,7 +82,7 @@ app.use("/api", router);
 
 // ── PRODUCTION: Serve static frontend files
 // On Hostinger, we serve the built React files from the 'client' directory
-const clientPath = path.resolve(__dirname, "../../clickers/dist");
+const clientPath = path.resolve(__dirname, "../artifacts/clickers/dist");
 app.use(express.static(clientPath));
 
 // ── PRODUCTION: Catch-all route for React SPA
