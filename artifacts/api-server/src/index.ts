@@ -2,25 +2,12 @@ import "dotenv/config";
 import app from "./app";
 import { logger } from "./lib/logger";
 
-const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
-
+const rawPort = process.env["PORT"] || "3000";
 const port = Number(rawPort);
 
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
+console.log(`HEKAYATY: Attempting to bind to port ${port} on 0.0.0.0`);
 
-app.listen(port, "0.0.0.0", (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
-
+app.listen(port, "0.0.0.0", () => {
+  console.log(`✅ HEKAYATY: Server is UP and listening on port ${port}`);
   logger.info({ port, host: "0.0.0.0" }, "Server listening and ready for Hostinger proxy");
 });
