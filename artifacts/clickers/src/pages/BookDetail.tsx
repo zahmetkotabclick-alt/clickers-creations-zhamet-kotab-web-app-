@@ -291,6 +291,12 @@ export function BookDetail() {
                  </motion.button>
               </div>
 
+              {/* Book Description */}
+              <div 
+                className={`text-xl text-primary/70 leading-relaxed mb-10 max-w-2xl ${isRTL ? 'font-arabic' : ''}`} 
+                dangerouslySetInnerHTML={{ __html: sanitizeHTML(description?.replace(/\n/g, '<br/>') || '') }} 
+              />
+
               {/* Advanced Rating System */}
               <div className={`flex flex-col mb-10 p-8 bg-white rounded-[3rem] border border-border shadow-2xl shadow-primary/5 max-w-md ${isRTL ? 'ml-auto' : ''}`}>
                  <div className="flex items-center justify-between mb-8">
@@ -375,10 +381,7 @@ export function BookDetail() {
                  </div>
               </div>
 
-              <div 
-                className={`text-xl text-primary/70 leading-relaxed mb-10 max-w-2xl ${isRTL ? 'font-arabic' : ''}`} 
-                dangerouslySetInnerHTML={{ __html: sanitizeHTML(description?.replace(/\n/g, '<br/>') || '') }} 
-              />
+
 
               {/* Master Meta info */}
               <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-12 ${isRTL ? 'text-right' : ''}`}>
