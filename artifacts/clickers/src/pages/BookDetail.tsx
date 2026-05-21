@@ -257,16 +257,38 @@ export function BookDetail() {
                 </p>
               </Link>
 
-              {/* Price Display */}
-              <div className={`flex items-baseline gap-4 mb-10 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                 <span className="text-5xl md:text-6xl font-black text-primary drop-shadow-sm">
-                    {book.price} <span className="text-xl md:text-2xl text-primary/50 uppercase tracking-wider">{isRTL ? 'ج.م' : 'EGP'}</span>
-                 </span>
-                 {book.original_price && book.original_price > book.price && (
-                    <span className="text-2xl text-primary/30 line-through font-bold">
-                       {book.original_price} {isRTL ? 'ج.م' : 'EGP'}
+              {/* Price & Primary CTA Display */}
+              <div className={`flex flex-wrap items-center gap-8 mb-10 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                 <div className={`flex items-baseline gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <span className="text-5xl md:text-6xl font-black text-primary drop-shadow-sm">
+                       {book.price} <span className="text-xl md:text-2xl text-primary/50 uppercase tracking-wider">{isRTL ? 'ج.م' : 'EGP'}</span>
                     </span>
-                 )}
+                    {book.original_price && book.original_price > book.price && (
+                       <span className="text-2xl text-primary/30 line-through font-bold">
+                          {book.original_price} {isRTL ? 'ج.م' : 'EGP'}
+                       </span>
+                    )}
+                 </div>
+
+                 <motion.button
+                   onClick={() => {
+                     addItem({
+                       bookId: book.id,
+                       title: title,
+                       coverUrl: book.cover_url || '',
+                       price: book.price,
+                       quantity: 1,
+                       format: book.format as 'digital' | 'physical' | 'both',
+                     });
+                     openCart();
+                   }}
+                   className={`flex items-center gap-4 px-8 py-5 bg-primary text-white rounded-[1.5rem] font-black uppercase tracking-wider text-xs shadow-2xl shadow-primary/30 transition-all hover:bg-accent hover:text-primary`}
+                   whileHover={{ y: -4 }}
+                   whileTap={{ scale: 0.95 }}
+                 >
+                   <ShoppingCart size={20} />
+                   {isRTL ? 'أضف للسلة الآن' : 'Add to Cart'}
+                 </motion.button>
               </div>
 
               {/* Advanced Rating System */}
@@ -375,25 +397,7 @@ export function BookDetail() {
 
               {/* CTAs */}
               <div className={`flex flex-wrap gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <motion.button
-                  onClick={() => {
-                    addItem({
-                      bookId: book.id,
-                      title: title,
-                      coverUrl: book.cover_url || '',
-                      price: book.price,
-                      quantity: 1,
-                      format: book.format as 'digital' | 'physical' | 'both',
-                    });
-                    openCart();
-                  }}
-                  className={`flex items-center gap-4 px-10 py-6 bg-primary text-white rounded-[2rem] font-black uppercase tracking-wider text-xs shadow-2xl shadow-primary/30 transition-all`}
-                  whileHover={{ y: -4, backgroundColor: 'var(--accent)' }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <ShoppingCart size={20} />
-                  {isRTL ? 'أضف للسلة الآن' : 'Acquire for Archive'}
-                </motion.button>
+
                 
                 {youtubeId && (
                   <motion.button
