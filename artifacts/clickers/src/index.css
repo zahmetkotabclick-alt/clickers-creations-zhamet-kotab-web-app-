@@ -430,6 +430,13 @@
       transition-duration: 0.01ms !important;
     }
   }
+
+  /* Anti-translation utility class */
+  /* Most translation engines (like Google) look purely for the class name string in the DOM, */
+  /* but explicitly defining it here ensures it's available for framework use and extension overrides. */
+  .notranslate {
+    /* Optional: add 'user-select: auto' if aggressive extensions try to disable text selection */
+  }
 }
 
 .scrollbar-hide {

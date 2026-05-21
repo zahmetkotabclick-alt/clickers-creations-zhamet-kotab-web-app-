@@ -1,15 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl" translate="no" class="notranslate">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta name="google" content="notranslate">
     <title>زحمة كتاب</title>
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Ultra-lightweight fallback protection to strip aggressive third-party translation extension classes -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        var observer = new MutationObserver(function(mutations) {
+          var html = document.documentElement;
+          if (html.classList.contains('translated-ltr') || html.classList.contains('translated-rtl')) {
+            html.classList.remove('translated-ltr', 'translated-rtl');
+            document.body.classList.remove('translated-ltr', 'translated-rtl');
+          }
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      });
+    </script>
   </head>
-  <body>
+  <body class="notranslate" translate="no">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
