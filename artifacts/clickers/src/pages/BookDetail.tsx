@@ -257,6 +257,18 @@ export function BookDetail() {
                 </p>
               </Link>
 
+              {/* Price Display */}
+              <div className={`flex items-baseline gap-4 mb-10 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                 <span className="text-5xl md:text-6xl font-black text-primary drop-shadow-sm">
+                    {book.price} <span className="text-xl md:text-2xl text-primary/50 uppercase tracking-wider">{isRTL ? 'ج.م' : 'EGP'}</span>
+                 </span>
+                 {book.original_price && book.original_price > book.price && (
+                    <span className="text-2xl text-primary/30 line-through font-bold">
+                       {book.original_price} {isRTL ? 'ج.م' : 'EGP'}
+                    </span>
+                 )}
+              </div>
+
               {/* Advanced Rating System */}
               <div className={`flex flex-col mb-10 p-8 bg-white rounded-[3rem] border border-border shadow-2xl shadow-primary/5 max-w-md ${isRTL ? 'ml-auto' : ''}`}>
                  <div className="flex items-center justify-between mb-8">
