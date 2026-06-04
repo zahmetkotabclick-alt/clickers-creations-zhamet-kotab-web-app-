@@ -53,6 +53,12 @@ function BookFormModal({ book, onClose }: { book?: Record<string, unknown> | nul
 
     if (!payload.world_id) delete payload.world_id;
     if (!payload.original_price) delete payload.original_price;
+    if (!payload.published_date) delete payload.published_date;
+    if (payload.pages === '' || payload.pages === null || payload.pages === undefined) {
+      delete payload.pages;
+    } else {
+      payload.pages = Number(payload.pages);
+    }
     
     await upsert.mutateAsync(payload);
     onClose();

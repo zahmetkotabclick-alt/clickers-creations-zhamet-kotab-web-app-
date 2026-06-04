@@ -56,20 +56,7 @@ export function AuthorCard({ author, index = 0 }: AuthorCardProps) {
             {bio}
           </p>
 
-          <div className={`flex items-center gap-4 text-xs ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <BookOpen size={12} className="text-maroon" />
-              <span className="text-maroon/60">{author.bookCount || 0} {t.authors.books}</span>
-            </div>
-            <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <Users size={12} className="text-maroon/80" />
-              <span className="text-maroon/60">{(author.readerCount ? author.readerCount / 1000 : 0).toFixed(0)}k {t.authors.readers}</span>
-            </div>
-            <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <Star size={12} className="text-gold" fill="currentColor" />
-              <span className="text-maroon/60">{author.rating || 'N/A'}</span>
-            </div>
-          </div>
+
         </div>
       </Link>
     </motion.div>
