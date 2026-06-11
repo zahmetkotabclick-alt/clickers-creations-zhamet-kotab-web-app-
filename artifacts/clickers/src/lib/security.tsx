@@ -1,15 +1,33 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * ProtectedRoute: Physically blocks unauthorized access to Admin pages.
  * Redirects non-admins to the login page or homepage.
+ *
+ * FIX: setLocation() must NEVER be called during the render phase — that
+ * triggers React error #426 ("state update during render"). All navigation
+ * side-effects are now safely moved into a useEffect.
  */
 export function ProtectedRoute({ children, adminOnly = true }: { children: ReactNode; adminOnly?: boolean }) {
-  const { user, profile, isLoading, isAdmin } = useAuth();
+  const { user, isLoading, isAdmin } = useAuth();
   const [, setLocation] = useLocation();
 
+  useEffect(() => {
+    if (isLoading) return; // Wait until auth is fully resolved
+
+    if (!user) {
+      setLocation('/auth');
+      return;
+    }
+
+    if (adminOnly && !isAdmin) {
+      setLocation('/');
+    }
+  }, [isLoading, user, isAdmin, adminOnly, setLocation]);
+
+  // Show spinner while auth state is being resolved
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -18,13 +36,8 @@ export function ProtectedRoute({ children, adminOnly = true }: { children: React
     );
   }
 
-  if (!user) {
-    setLocation('/auth');
-    return null;
-  }
-
-  if (adminOnly && !isAdmin) {
-    setLocation('/');
+  // While the useEffect redirect hasn't fired yet, render nothing (no flash)
+  if (!user || (adminOnly && !isAdmin)) {
     return null;
   }
 
