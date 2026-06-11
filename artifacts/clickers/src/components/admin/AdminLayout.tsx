@@ -1,4 +1,4 @@
-import { useState, useCallback, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 import {
@@ -149,6 +149,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   const clearAll = useCallback(() => setToasts([]), []);
 
+  useEffect(() => {
+    if (!isLoading && !isAdmin) {
+      navigate('/auth');
+    }
+  }, [isLoading, isAdmin, navigate]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
@@ -158,7 +164,6 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   if (!isAdmin) {
-    navigate('/auth');
     return null;
   }
 
