@@ -92,6 +92,11 @@ export const orders = pgTable("orders", {
   shippingAddress: text("shipping_address"),
   notes: text("notes"),
   transactionId: text("transaction_id"),
+  telegramStatus: text("telegram_status").default("pending"),
+  telegramSentAt: timestamp("telegram_sent_at", { withTimezone: true, mode: "string" }),
+  telegramAttempts: integer("telegram_attempts").default(0),
+  telegramLastError: text("telegram_last_error"),
+  telegramMessageId: text("telegram_message_id"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).defaultNow().notNull(),
 });
 

@@ -45,6 +45,26 @@ export function CheckoutPage() {
       setOrderId(order.id as string);
       clear();
       setStep('confirmation');
+
+      // Asynchronously trigger backend Telegram order notification (Non-blocking)
+      if (order?.id) {
+        (async () => {
+          try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (sessionData?.session?.access_token) {
+              headers['Authorization'] = `Bearer ${sessionData.session.access_token}`;
+            }
+            await fetch('/api/notifications/new-order', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ orderId: order.id }),
+            });
+          } catch (err) {
+            console.warn('[Order Notification] Non-blocking notification request failed:', err);
+          }
+        })();
+      }
     } catch (err) {
       console.error(err);
     }

@@ -1,8 +1,14 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), "artifacts/api-server/.env") });
+dotenv.config({ path: path.resolve(__dirname, "../../artifacts/api-server/.env") });
+
 import app from "./app";
 import { logger } from "./lib/logger";
 
-const rawPort = process.env["PORT"] || "3000";
+const rawPort = process.env["PORT"] || "5000";
 const port = Number(rawPort);
 
 console.log(`HEKAYATY: Attempting to bind to port ${port} on 0.0.0.0`);

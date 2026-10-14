@@ -2,11 +2,15 @@
 node_modules/
 .pnpm-store/
 .local/
+pnpm-lock.yaml
+*/pnpm-lock.yaml
 
 # Build outputs
 dist/
+dist-server/
 build/
 .vercel/
+*.timestamp-*.mjs
 
 # Environment variables
 .env

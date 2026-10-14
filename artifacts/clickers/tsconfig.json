@@ -4,14 +4,16 @@
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
     "noEmit": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
     "lib": ["esnext", "dom", "dom.iterable"],
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
     "types": ["node", "vite/client"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@workspace/api-client-react": ["../../lib/api-client-react/src/index.ts"]
     }
   },
   "references": [

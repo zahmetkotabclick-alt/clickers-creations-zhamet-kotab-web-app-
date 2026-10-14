@@ -40,34 +40,36 @@ export function Navbar() {
   return (
     <>
       <motion.nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-in-out ${
-          isScrolled
-            ? 'bg-background/90 backdrop-blur-2xl border-b border-border shadow-[0_2px_15px_-3px_rgba(139,29,61,0.07)]'
-            : 'bg-transparent'
-        }`}
+        className="fixed top-3 sm:top-4 left-0 right-0 z-50 px-3 sm:px-6 lg:px-8 pointer-events-none transition-all duration-300"
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-24">
+        <div
+          className={`pointer-events-auto max-w-7xl mx-auto rounded-full transition-all duration-500 ease-in-out px-4 sm:px-7 py-2 ${
+            isScrolled
+              ? 'bg-[#FFFDF9]/95 backdrop-blur-2xl border border-amber-900/15 shadow-[0_10px_35px_rgba(139,29,61,0.12)]'
+              : 'bg-[#FFFDF9]/90 backdrop-blur-xl border border-amber-900/12 shadow-[0_8px_30px_rgba(139,29,61,0.08)]'
+          }`}
+        >
+          <div className="flex items-center justify-between h-12 md:h-14">
             {/* Logo */}
             <Link href="/">
               <motion.div
-                className="flex items-center gap-3 cursor-pointer group"
+                className="flex items-center gap-2.5 cursor-pointer group"
                 whileHover={{ scale: 1.01 }}
                 data-testid="nav-logo"
               >
                 <img 
                   src="/logo.png" 
                   alt="Zahmet Kotab Logo" 
-                  className="h-12 w-auto object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300" 
+                  className="h-10 md:h-11 w-auto object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300" 
                 />
                 <div className="flex flex-col">
-                  <span className="font-arabic font-bold text-xl md:text-2xl leading-tight text-primary">
+                  <span className="font-arabic font-black text-xl md:text-2xl leading-tight text-primary drop-shadow-sm">
                     زحمة كتاب
                   </span>
-                  <span className="text-xs md:text-[11px] uppercase tracking-[0.2em] font-cinematic text-accent opacity-70">
+                  <span className="text-[11px] uppercase tracking-[0.2em] font-cinematic text-accent font-black -mt-0.5">
                     Dar Nashr
                   </span>
                 </div>
@@ -75,14 +77,14 @@ export function Navbar() {
             </Link>
 
             {/* Desktop Nav Links */}
-            <div className="hidden lg:flex items-center gap-2" dir={isRTL ? 'rtl' : 'ltr'}>
+            <div className="hidden lg:flex items-center gap-1.5" dir={isRTL ? 'rtl' : 'ltr'}>
               {navLinks.map((link) => (
                 <Link key={link.href} href={link.href}>
                   <motion.span
-                    className={`px-4 py-2 rounded-full text-[13px] font-semibold tracking-wide transition-all duration-300 cursor-pointer relative group ${
+                    className={`px-4 py-2 rounded-full text-[15px] md:text-[16px] font-extrabold tracking-wide transition-all duration-300 cursor-pointer relative group ${
                       location === link.href
-                        ? 'text-primary'
-                        : isScrolled ? 'text-primary/60 hover:text-primary' : 'text-primary/70 hover:text-primary'
+                        ? 'text-primary bg-primary/10'
+                        : 'text-primary/90 hover:text-primary hover:bg-primary/5'
                     }`}
                     whileHover={{ y: -1 }}
                     data-testid={`nav-link-${link.labelKey}`}
@@ -91,22 +93,21 @@ export function Navbar() {
                     {location === link.href && (
                       <motion.div
                         layoutId="nav-active"
-                        className="absolute bottom-0 left-4 right-4 h-0.5 bg-accent rounded-full"
+                        className="absolute bottom-0 left-4 right-4 h-1 bg-accent rounded-full"
                         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                       />
                     )}
-                    <div className="absolute inset-0 bg-primary/5 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300 -z-10" />
                   </motion.span>
                 </Link>
               ))}
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex items-center gap-2.5 md:gap-3">
               {/* Language Toggle */}
               <motion.button
                 onClick={toggleLanguage}
-                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full border border-border shadow-sm transition-all duration-300 text-[12px] font-bold tracking-wider hover:bg-primary hover:text-primary-foreground hover:border-primary active:scale-95"
+                className="hidden md:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 border border-primary/20 text-primary shadow-xs transition-all duration-300 text-[12px] font-bold tracking-wider hover:bg-primary hover:text-white hover:border-primary active:scale-95"
                 data-testid="language-toggle"
               >
                 <Globe size={14} />
@@ -114,21 +115,21 @@ export function Navbar() {
               </motion.button>
 
               {/* Utility Icons */}
-              <div className="flex items-center bg-card/50 rounded-full border border-border p-1">
+              <div className="flex items-center bg-white/80 rounded-full border border-primary/20 p-0.5 shadow-xs">
                 {/* Cart */}
                 <motion.button
-                  className="touch-target w-11 h-11 flex items-center justify-center rounded-full transition-all duration-300 text-primary/70 hover:text-primary hover:bg-primary/5 relative"
-                  whileHover={{ scale: 1.1 }}
+                  className="touch-target w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 text-primary hover:bg-primary/10 relative"
+                  whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={toggleCart}
                   data-testid="cart-button"
                 >
-                  <ShoppingCart size={18} />
+                  <ShoppingCart size={17} />
                   {totalItems > 0 && (
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-primary text-\[11px\] font-black rounded-full flex items-center justify-center shadow-sm border-2 border-background"
+                      className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-accent text-primary text-[10px] font-black rounded-full flex items-center justify-center shadow-sm border-2 border-background"
                     >
                       {totalItems > 9 ? '9+' : totalItems}
                     </motion.span>
@@ -140,7 +141,7 @@ export function Navbar() {
               {isAdmin && (
                 <Link href="/admin">
                   <motion.button
-                    className="hidden md:flex items-center gap-2 px-4 py-2 bg-accent text-primary font-black text-xs rounded-full shadow-[0_4px_12px_rgba(201,168,76,0.3)] hover:bg-primary hover:text-white transition-all ml-2"
+                    className="hidden md:flex items-center gap-1.5 px-3.5 py-1.5 bg-accent text-primary font-black text-xs rounded-full shadow-xs hover:bg-primary hover:text-white transition-all ml-1"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -154,14 +155,14 @@ export function Navbar() {
               {profile ? (
                 <div className="relative" onClick={(e) => e.stopPropagation()}>
                   <motion.button
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-border hover:bg-primary/10 transition-all"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-all"
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     whileTap={{ scale: 0.96 }}
                   >
-                    <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white text-xs font-black">
+                    <div className="w-6.5 h-6.5 bg-primary rounded-full flex items-center justify-center text-white text-xs font-black">
                       {profile.email[0].toUpperCase()}
                     </div>
-                    <span className="hidden md:block text-primary font-bold text-[12px] max-w-[100px] truncate">
+                    <span className="hidden md:block text-primary font-bold text-[12px] max-w-[90px] truncate">
                       {profile.full_name || profile.email.split('@')[0]}
                     </span>
                   </motion.button>
@@ -189,7 +190,6 @@ export function Navbar() {
                               <span>{isRTL ? 'طلباتي' : 'My Orders'}</span>
                             </div>
                           </Link>
-                          {/* Removed admin link from dropdown since it is now prominently on the navbar */}
                           <button
                             onClick={() => { signOut(); setShowUserMenu(false); }}
                             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm"
@@ -205,8 +205,8 @@ export function Navbar() {
               ) : (
                 <Link href="/auth">
                   <motion.span
-                    className="hidden sm:block px-6 py-2.5 bg-primary text-primary-foreground rounded-full text-[12px] font-bold tracking-wide cursor-pointer shadow-lg shadow-primary/10 hover:shadow-primary/20 hover:bg-accent hover:text-primary transition-all duration-300"
-                    whileHover={{ y: -2 }}
+                    className="hidden sm:block px-5 py-2 bg-primary text-primary-foreground rounded-full text-[12px] font-bold tracking-wide cursor-pointer shadow-md hover:bg-accent hover:text-primary transition-all duration-300"
+                    whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.95 }}
                     data-testid="nav-cta"
                   >
@@ -217,12 +217,12 @@ export function Navbar() {
 
               {/* Mobile Menu Button */}
               <motion.button
-                className="lg:hidden w-11 h-11 flex items-center justify-center rounded-2xl bg-card border border-border text-primary shadow-sm"
+                className="lg:hidden w-9 h-9 flex items-center justify-center rounded-full bg-white/80 border border-primary/20 text-primary shadow-xs"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 whileTap={{ scale: 0.95 }}
                 data-testid="mobile-menu-button"
               >
-                {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </motion.button>
             </div>
           </div>

@@ -1,12 +1,16 @@
 import { Router, Request, Response } from "express";
 import crypto from "crypto";
 import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+import { db, orders } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { recoveryQueue } from "../lib/recoveryQueue";
 import { monitor } from "../lib/monitor";
+import { notifyNewOrder } from "../lib/telegramService";
 
 const router = Router();
 
-// Your Paymob HMAC Secret from the dashboard
+// Paymob HMAC Secret from the dashboard
 const PAYMOB_HMAC_SECRET = process.env.PAYMOB_HMAC_SECRET || "your_secret_here";
 
 // ── SECURITY: Strict Paymob Webhook Schema ──────────────────────
@@ -105,20 +109,56 @@ router.post("/webhook", (req: Request, res: Response): any => {
     try {
       const validatedData = validation.data;
 
+      // ── CRITICAL SECURITY: Only proceed if transaction was genuinely successful
       if (!validatedData.obj.success) {
-         monitor.warn(`Transaction ${validatedData.obj.id} declined`, 'PaymobWebhook');
+         monitor.warn(`Transaction ${validatedData.obj.id} declined or failed — notification suppressed`, 'PaymobWebhook');
          return;
       }
 
       const orderId = validatedData.obj.order.merchant_order_id;
-      monitor.info(`Confirmed payment for order: ${orderId}`, 'PaymobWebhook');
+      const transactionId = String(validatedData.obj.id);
+      monitor.info(`Confirmed successful payment for order: ${orderId} (Transaction #${transactionId})`, 'PaymobWebhook');
 
+      // Enqueue order update and Telegram notification with retry capability
       recoveryQueue.enqueue(
-        `Mark order ${orderId} as paid`,
+        `Process paid order ${orderId}`,
         async () => {
-          // Internal DB logic here
-          // This will be retried automatically by the recovery queue on failure
-          monitor.info(`Order ${orderId} successfully marked as PAID in background`, 'RecoveryQueue');
+          // A. Mark order as 'paid' in database
+          let updated = false;
+          if (db) {
+            try {
+              await db
+                .update(orders)
+                .set({
+                  status: "paid",
+                  transactionId: transactionId,
+                })
+                .where(eq(orders.id, orderId));
+              updated = true;
+            } catch (err: any) {
+              monitor.warn(`[PaymobWebhook] Drizzle update failed, falling back to Supabase: ${err?.message}`);
+            }
+          }
+
+          if (!updated) {
+            const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+            const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || "";
+            if (url && key) {
+              const supabase = createClient(url, key);
+              await supabase
+                .from("orders")
+                .update({ status: "paid", transaction_id: transactionId })
+                .eq("id", orderId);
+            }
+          }
+
+          monitor.info(`Order ${orderId} successfully marked as PAID in database`, 'RecoveryQueue');
+
+          // B. Trigger Telegram order notification for verified paid order
+          const notifyResult = await notifyNewOrder(orderId, { source: "paymob" });
+          if (!notifyResult.success && notifyResult.reason !== "NOT_CONFIGURED" && notifyResult.reason !== "ALREADY_SENT") {
+            throw new Error(`Telegram notification failed: ${notifyResult.error || notifyResult.reason}`);
+          }
         },
         5
       );

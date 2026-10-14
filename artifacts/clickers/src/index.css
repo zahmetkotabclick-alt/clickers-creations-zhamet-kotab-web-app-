@@ -127,7 +127,7 @@
   --app-font-serif: 'Cormorant Garamond', Georgia, serif;
   --app-font-mono: Menlo, monospace;
   --app-font-cinematic: 'Cinzel', serif;
-  --app-font-arabic: 'Tajawal', 'Cairo', sans-serif;
+  --app-font-arabic: 'Cairo', 'Tajawal', 'Almarai', sans-serif;
 
   --shadow-2xs: 0px 1px 2px rgba(44, 24, 16, 0.05);
   --shadow-xs: 0px 2px 4px rgba(44, 24, 16, 0.08);
@@ -206,6 +206,7 @@
   }
 
   html {
+    font-size: 17px;
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -214,10 +215,19 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: var(--app-font-sans);
+    font-family: var(--app-font-arabic);
+    font-size: 1.05rem;
+    line-height: 1.65;
+    font-weight: 500;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--app-font-arabic);
+    font-weight: 800;
+    line-height: 1.25;
   }
 
   ::selection {
