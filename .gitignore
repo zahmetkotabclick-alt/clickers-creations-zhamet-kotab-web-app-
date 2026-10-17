@@ -6,11 +6,13 @@ pnpm-lock.yaml
 */pnpm-lock.yaml
 
 # Build outputs
-dist/
+/dist/
 dist-server/
 build/
 .vercel/
 *.timestamp-*.mjs
+!artifacts/clickers/dist/
+!artifacts/clickers/dist/**
 
 # Environment variables
 .env
