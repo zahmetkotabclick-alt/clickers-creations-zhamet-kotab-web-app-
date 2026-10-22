@@ -1,7 +1,6 @@
 import { Router, Request, Response } from "express";
 import crypto from "crypto";
 import { z } from "zod";
-import { createClient } from "@supabase/supabase-js";
 import { db, orders } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { recoveryQueue } from "../lib/recoveryQueue";
@@ -141,14 +140,19 @@ router.post("/webhook", (req: Request, res: Response): any => {
           }
 
           if (!updated) {
-            const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+            const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
             const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || "";
             if (url && key) {
-              const supabase = createClient(url, key);
-              await supabase
-                .from("orders")
-                .update({ status: "paid", transaction_id: transactionId })
-                .eq("id", orderId);
+              await fetch(`${url}/rest/v1/orders?id=eq.${orderId}`, {
+                method: "PATCH",
+                headers: {
+                  apikey: key,
+                  Authorization: `Bearer ${key}`,
+                  "Content-Type": "application/json",
+                  Prefer: "return=minimal",
+                },
+                body: JSON.stringify({ status: "paid", transaction_id: transactionId }),
+              }).catch(() => null);
             }
           }
 

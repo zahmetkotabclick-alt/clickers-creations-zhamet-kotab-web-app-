@@ -1,4 +1,3 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { db, orders, orderItems, books, profiles } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "./logger";
@@ -112,32 +111,11 @@ export function formatOrderStatus(status?: string): string {
   return status;
 }
 
-/**
- * Instantiates a server-side Supabase client with either service key or user auth header.
- */
-// Node.js 20 has no native WebSocket. Disable Realtime on server-side client.
-const SUPABASE_NO_REALTIME = {
-  realtime: { params: { eventsPerSecond: 0 } },
-  global: { fetch: fetch.bind(globalThis) },
-} as const;
-
-function getSupabaseClient(authHeader?: string): SupabaseClient {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://biugvsoxsvyfuouekomd.supabase.co";
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+function getSupabaseConfig() {
+  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://biugvsoxsvyfuouekomd.supabase.co").replace(/\/$/, "");
   const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWd2c294c3Z5ZnVvdWVrb21kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5NTc1MzYsImV4cCI6MjA5MTUzMzUzNn0.VibSfRoaC--40buZA5BL_kr910E07Lys2_0_9jsz88Q";
-
-  if (serviceKey) {
-    return createClient(url, serviceKey, SUPABASE_NO_REALTIME);
-  }
-
-  const options: any = { ...SUPABASE_NO_REALTIME };
-  if (authHeader) {
-    options.global = {
-      ...SUPABASE_NO_REALTIME.global,
-      headers: { Authorization: authHeader },
-    };
-  }
-  return createClient(url, anonKey, options);
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return { url, anonKey, serviceKey };
 }
 
 /**
@@ -400,56 +378,88 @@ async function loadOrderData(orderId: string, authHeader?: string): Promise<Orde
     }
   }
 
-  // 2. Fallback to Supabase JS Client
-  const supabase = getSupabaseClient(authHeader);
-  const { data: order, error: orderErr } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("id", orderId)
-    .single();
+  // 2. Fallback to Supabase PostgREST via direct HTTPS fetch (Zero-dependency, no WebSocket / Realtime)
+  const { url, anonKey, serviceKey } = getSupabaseConfig();
+  const keyToUse = serviceKey || anonKey;
+  const authToUse = serviceKey ? `Bearer ${serviceKey}` : (authHeader || `Bearer ${anonKey}`);
 
-  if (orderErr || !order) {
-    logger.warn({ orderErr: sanitizeError(orderErr), orderId }, "[Telegram Service] Order not found in Supabase.");
+  try {
+    const orderRes = await fetch(`${url}/rest/v1/orders?id=eq.${orderId}&select=*`, {
+      headers: {
+        apikey: keyToUse,
+        Authorization: authToUse,
+      },
+    });
+
+    if (!orderRes.ok) {
+      logger.warn({ orderId, status: orderRes.status }, "[Telegram Service] PostgREST order lookup failed.");
+      return null;
+    }
+
+    const orderRows: any = await orderRes.json().catch(() => []);
+    if (!Array.isArray(orderRows) || orderRows.length === 0) {
+      logger.warn({ orderId }, "[Telegram Service] Order not found in database.");
+      return null;
+    }
+    const order = orderRows[0];
+
+    // Fetch customer profile
+    let profile: any = null;
+    if (order.user_id) {
+      const profileRes = await fetch(`${url}/rest/v1/profiles?id=eq.${order.user_id}&select=*`, {
+        headers: {
+          apikey: keyToUse,
+          Authorization: authToUse,
+        },
+      });
+      if (profileRes.ok) {
+        const profileRows: any = await profileRes.json().catch(() => []);
+        if (Array.isArray(profileRows) && profileRows.length > 0) {
+          profile = profileRows[0];
+        }
+      }
+    }
+
+    // Fetch items with joined book titles
+    const itemsRes = await fetch(
+      `${url}/rest/v1/order_items?order_id=eq.${orderId}&select=quantity,unit_price,books(title_ar,title_en)`,
+      {
+        headers: {
+          apikey: keyToUse,
+          Authorization: authToUse,
+        },
+      }
+    );
+
+    const rawItems: any = itemsRes.ok ? await itemsRes.json().catch(() => []) : [];
+    const items = (Array.isArray(rawItems) ? rawItems : []).map((i: any) => ({
+      titleAr: i.books?.title_ar || "كتاب بدون عنوان",
+      titleEn: i.books?.title_en || undefined,
+      quantity: i.quantity || 1,
+      unitPrice: i.unit_price || 0,
+    }));
+
+    return {
+      orderId: order.id,
+      userId: order.user_id || undefined,
+      createdAt: order.created_at,
+      status: order.status,
+      paymentMethod: order.payment_method || undefined,
+      transactionId: order.transaction_id || undefined,
+      totalAmount: order.total_amount,
+      shippingAddress: order.shipping_address || undefined,
+      notes: order.notes || undefined,
+      customer: {
+        fullName: profile?.full_name || undefined,
+        phone: profile?.phone || undefined,
+        email: profile?.email || undefined,
+      },
+      items,
+    };
+  } catch (err: any) {
+    logger.error({ orderId, err: sanitizeError(err) }, "[Telegram Service] Exception in fallback PostgREST order lookup.");
     return null;
   }
-
-  // Fetch customer profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", order.user_id)
-    .single();
-
-  // Fetch items with joined book titles
-  const { data: rawItems } = await supabase
-    .from("order_items")
-    .select("quantity, unit_price, books(title_ar, title_en)")
-    .eq("order_id", orderId);
-
-  const items = (rawItems || []).map((i: any) => ({
-    titleAr: i.books?.title_ar || "كتاب بدون عنوان",
-    titleEn: i.books?.title_en || undefined,
-    quantity: i.quantity || 1,
-    unitPrice: i.unit_price || 0,
-  }));
-
-  return {
-    orderId: order.id,
-    userId: order.user_id || undefined,
-    createdAt: order.created_at,
-    status: order.status,
-    paymentMethod: order.payment_method || undefined,
-    transactionId: order.transaction_id || undefined,
-    totalAmount: order.total_amount,
-    shippingAddress: order.shipping_address || undefined,
-    notes: order.notes || undefined,
-    customer: {
-      fullName: profile?.full_name || undefined,
-      phone: profile?.phone || undefined,
-      email: profile?.email || undefined,
-    },
-    items,
-  };
 }
 
 /**
@@ -492,14 +502,42 @@ export async function notifyNewOrder(
     if (options.callerUserId) {
       const orderOwnerId = orderData.userId;
       if (orderOwnerId && orderOwnerId !== options.callerUserId) {
-        const supabase = getSupabaseClient(options.authHeader);
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", options.callerUserId)
-          .single();
+        let isAdmin = false;
+        if (db) {
+          try {
+            const rows = await db
+              .select({ role: profiles.role })
+              .from(profiles)
+              .where(eq(profiles.id, options.callerUserId))
+              .limit(1);
+            if (rows.length > 0 && rows[0].role === "admin") {
+              isAdmin = true;
+            }
+          } catch {
+            // Fall through to PostgREST check
+          }
+        }
 
-        const isAdmin = profile?.role === "admin";
+        if (!isAdmin) {
+          const { url, anonKey, serviceKey } = getSupabaseConfig();
+          const keyToUse = serviceKey || anonKey;
+          const authToUse = serviceKey ? `Bearer ${serviceKey}` : (options.authHeader || `Bearer ${anonKey}`);
+
+          try {
+            const pRes = await fetch(`${url}/rest/v1/profiles?id=eq.${options.callerUserId}&select=role`, {
+              headers: { apikey: keyToUse, Authorization: authToUse },
+            });
+            if (pRes.ok) {
+              const pData: any = await pRes.json().catch(() => []);
+              if (Array.isArray(pData) && pData.length > 0 && pData[0].role === "admin") {
+                isAdmin = true;
+              }
+            }
+          } catch {
+            // Treat as non-admin on network error
+          }
+        }
+
         if (!isAdmin) {
           logger.warn(
             { orderId, caller: options.callerUserId, owner: orderOwnerId },
