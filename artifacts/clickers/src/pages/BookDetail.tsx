@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { sanitizeHTML } from '@/lib/security';
 import { SEO } from '@/components/SEO';
 import { useDiscovery } from '@/hooks/useDiscovery';
+import { normalizeArabicText } from '@/lib/textUtils';
 
 // Extract YouTube ID Utility
 function getYouTubeID(url: string) {
@@ -96,7 +97,8 @@ export function BookDetail() {
     );
   }
 
-  const title = language === 'ar' ? book.title_ar : book.title_en;
+  const rawTitle = language === 'ar' ? book.title_ar : book.title_en;
+  const title = normalizeArabicText(rawTitle);
   const authorRecord = Array.isArray(book.authors) ? book.authors[0] : book.authors;
   const authorName = authorRecord ? (language === 'ar' ? authorRecord.name_ar : authorRecord.name_en) : 'Uncharted Pen';
   const description = language === 'ar' ? book.description_ar : book.description_en;
@@ -184,29 +186,29 @@ export function BookDetail() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Link href="/store">
             <motion.button
-              className={`flex items-center gap-2 text-primary/40 hover:text-primary text-xs font-black uppercase tracking-[0.2em] transition-colors mb-12 ${isRTL ? 'flex-row-reverse ml-auto' : ''}`}
+              className={`inline-flex items-center gap-2 text-primary/40 hover:text-primary text-xs font-black uppercase tracking-[0.2em] transition-colors mb-10 ${isRTL ? 'flex-row-reverse' : ''}`}
               whileHover={{ x: isRTL ? 3 : -3 }}
             >
               {isRTL ? <ArrowRight size={14} /> : <ArrowLeft size={14} />}
-              {t.nav.store}
+              <span>{t.nav.store}</span>
             </motion.button>
           </Link>
 
-          <div className={`grid grid-cols-1 lg:grid-cols-12 gap-16 items-start`}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
             {/* Cover Art */}
             <motion.div
-              className="lg:col-span-5 flex justify-center lg:justify-start"
+              className="lg:col-span-5 flex justify-center"
               initial={{ opacity: 0, x: isRTL ? 50 : -50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <div className="relative group">
+              <div className="relative group w-full max-w-sm sm:max-w-md">
                 <div className="absolute inset-0 rounded-[2.5rem] bg-accent/20 blur-[100px] scale-110 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                <div className="relative overflow-hidden rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(139,29,61,0.5)] border-4 border-white">
+                <div className="relative overflow-hidden rounded-[2.5rem] shadow-[0_40px_80px_-20px_rgba(139,29,61,0.45)] border-4 border-white bg-white">
                   <img
                     src={book.cover_url || ''}
                     alt={title}
-                    className="w-full max-w-md aspect-[2/3] object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="w-full aspect-[2/3] object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   {youtubeId && (
                     <button 
@@ -216,12 +218,14 @@ export function BookDetail() {
                       <div className="w-20 h-20 rounded-full bg-white/20 border border-white/40 flex items-center justify-center text-white backdrop-blur-md scale-75 group-hover:scale-100 transition-transform duration-500 shadow-2xl">
                         <Play size={32} fill="white" className="ml-1" />
                       </div>
-                      <span className="absolute bottom-10 text-xs font-black text-white uppercase tracking-[0.3em] opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-700 delay-100">Watch Trailer</span>
+                      <span className="absolute bottom-10 text-xs font-black text-white uppercase tracking-[0.3em] opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-700 delay-100">
+                        {isRTL ? 'شاهد الإعلان' : 'Watch Trailer'}
+                      </span>
                     </button>
                   )}
                 </div>
                 {book.is_new && (
-                  <div className="absolute top-8 right-8 px-5 py-2 bg-yellow-400 text-primary text-xs font-black rounded-2xl shadow-xl rotate-3">
+                  <div className={`absolute top-6 ${isRTL ? 'left-6 -rotate-3' : 'right-6 rotate-3'} px-4 py-1.5 bg-yellow-400 text-primary text-xs font-black rounded-2xl shadow-xl z-10`}>
                     {language === 'ar' ? 'إصدار جديد' : 'NEW RELEASE'}
                   </div>
                 )}
@@ -230,75 +234,106 @@ export function BookDetail() {
 
             {/* Book Chronicles */}
             <motion.div
-              className={`lg:col-span-7 ${isRTL ? 'text-right' : 'text-left'}`}
+              className={`lg:col-span-7 min-w-0 max-w-full overflow-hidden ${isRTL ? 'text-right' : 'text-left'}`}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <div className={`flex items-center gap-2 mb-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <span className="px-4 py-1.5 bg-primary/5 text-primary text-xs font-black uppercase tracking-wider rounded-full border border-primary/5">
+              {/* Badges */}
+              <div className="flex flex-wrap items-center gap-2.5 mb-5">
+                <span className="px-4 py-1.5 bg-primary/5 text-primary text-xs font-black uppercase tracking-wider rounded-full border border-primary/10">
                   {language === 'ar' ? book.genre_ar : book.genre}
                 </span>
                 {discount && (
-                  <span className="px-4 py-1.5 bg-red-500 text-white text-xs font-black rounded-full shadow-lg">
+                  <span className="px-4 py-1.5 bg-red-500 text-white text-xs font-black rounded-full shadow-md">
                     -{discount}%
                   </span>
                 )}
               </div>
 
-              <h1 className={`text-5xl md:text-7xl font-black text-primary mb-6 leading-[1.1] ${isRTL ? 'font-arabic' : 'font-cinematic'}`}>
+              {/* Book Title */}
+              <h1 
+                className={`text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-black text-primary mb-5 leading-[1.25] tracking-tight break-words [overflow-wrap:break-word] [word-break:keep-all] ${
+                  isRTL ? 'font-arabic text-right' : 'font-cinematic text-left'
+                }`}
+                style={{
+                  wordBreak: 'keep-all',
+                  overflowWrap: 'break-word',
+                }}
+              >
                 {title}
               </h1>
 
-              <Link href={`/authors/${book.author_id}`}>
-                <p className={`text-2xl text-accent font-bold mb-8 cursor-pointer hover:tracking-wider transition-all inline-flex items-center gap-3 ${isRTL ? 'font-arabic flex-row-reverse' : ''}`}>
-                  <ShieldCheck size={24} />
-                  <span>{authorName}</span>
-                </p>
-              </Link>
+              {/* Author Info */}
+              <div className="mb-6">
+                <Link href={`/authors/${book.author_id}`}>
+                  <span className={`text-xl md:text-2xl text-accent font-bold cursor-pointer hover:opacity-85 transition-opacity inline-flex items-center gap-2.5 ${isRTL ? 'font-arabic flex-row-reverse' : ''}`}>
+                    <ShieldCheck size={22} className="text-accent flex-shrink-0" />
+                    <span>{authorName}</span>
+                  </span>
+                </Link>
+              </div>
 
               {/* Price & Primary CTA Display */}
-              <div className={`flex flex-wrap items-center gap-8 mb-10 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                 <div className={`flex items-baseline gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <span className="text-5xl md:text-6xl font-black text-primary drop-shadow-sm">
-                       {book.price} <span className="text-xl md:text-2xl text-primary/50 uppercase tracking-wider">{isRTL ? 'ج.م' : 'EGP'}</span>
+              <div className="flex flex-wrap items-center gap-6 sm:gap-8 mb-8">
+                <div className="flex items-baseline gap-3">
+                  <span className="text-4xl sm:text-5xl font-black text-primary drop-shadow-sm font-arabic">
+                    {book.price} <span className="text-lg sm:text-xl text-primary/60 font-bold uppercase">{isRTL ? 'ج.م' : 'EGP'}</span>
+                  </span>
+                  {book.original_price && book.original_price > book.price && (
+                    <span className="text-xl sm:text-2xl text-primary/30 line-through font-bold font-arabic">
+                      {book.original_price} {isRTL ? 'ج.م' : 'EGP'}
                     </span>
-                    {book.original_price && book.original_price > book.price && (
-                       <span className="text-2xl text-primary/30 line-through font-bold">
-                          {book.original_price} {isRTL ? 'ج.م' : 'EGP'}
-                       </span>
-                    )}
-                 </div>
+                  )}
+                </div>
 
-                 <motion.button
-                   onClick={() => {
-                     addItem({
-                       bookId: book.id,
-                       title: title,
-                       coverUrl: book.cover_url || '',
-                       price: book.price,
-                       quantity: 1,
-                       format: book.format as 'digital' | 'physical' | 'both',
-                     });
-                     openCart();
-                   }}
-                   className={`flex items-center gap-4 px-8 py-5 bg-primary text-white rounded-[1.5rem] font-black uppercase tracking-wider text-xs shadow-2xl shadow-primary/30 transition-all hover:bg-accent hover:text-primary`}
-                   whileHover={{ y: -4 }}
-                   whileTap={{ scale: 0.95 }}
-                 >
-                   <ShoppingCart size={20} />
-                   {isRTL ? 'أضف للسلة الآن' : 'Add to Cart'}
-                 </motion.button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <motion.button
+                    onClick={() => {
+                      addItem({
+                        bookId: book.id,
+                        title: title,
+                        coverUrl: book.cover_url || '',
+                        price: book.price,
+                        quantity: 1,
+                        format: book.format as 'digital' | 'physical' | 'both',
+                      });
+                      openCart();
+                    }}
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-xl shadow-primary/20 transition-all hover:bg-accent hover:text-primary active:scale-95 cursor-pointer"
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.96 }}
+                  >
+                    <ShoppingCart size={18} />
+                    <span>{isRTL ? 'أضف للسلة الآن' : 'Add to Cart'}</span>
+                  </motion.button>
+
+                  {youtubeId && (
+                    <motion.button
+                      onClick={() => setShowTrailer(true)}
+                      className="inline-flex items-center gap-2.5 px-6 py-4 bg-white border-2 border-primary/20 text-primary rounded-2xl font-black text-xs uppercase tracking-wider transition-all hover:bg-primary/5 hover:border-primary active:scale-95 cursor-pointer"
+                      whileHover={{ y: -2 }}
+                      whileTap={{ scale: 0.96 }}
+                    >
+                      <Play size={16} fill="currentColor" />
+                      <span>{isRTL ? 'شاهد الإعلان' : 'Watch Trailer'}</span>
+                    </motion.button>
+                  )}
+                </div>
               </div>
 
               {/* Book Description */}
               <div 
-                className={`text-xl text-primary/70 leading-relaxed mb-10 max-w-2xl ${isRTL ? 'font-arabic' : ''}`} 
+                className={`text-base sm:text-lg md:text-xl text-primary/80 leading-[1.85] mb-10 max-w-2xl font-normal ${isRTL ? 'font-arabic text-right' : 'text-left'}`} 
+                style={{
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                }}
                 dangerouslySetInnerHTML={{ __html: sanitizeHTML(description?.replace(/\n/g, '<br/>') || '') }} 
               />
 
               {/* Advanced Rating System */}
-              <div className={`flex flex-col mb-10 p-8 bg-white rounded-[3rem] border border-border shadow-2xl shadow-primary/5 max-w-md ${isRTL ? 'ml-auto' : ''}`}>
+              <div className={`flex flex-col mb-10 p-6 sm:p-8 bg-white rounded-3xl border border-border shadow-xl shadow-primary/5 max-w-md ${isRTL ? 'mr-0 ml-auto' : 'ml-0 mr-auto'}`}>
                  <div className="flex items-center justify-between mb-8">
                     <div>
                        <span className="text-\[11px\] font-black uppercase tracking-[0.3em] text-primary/20 mb-2 block">Archive Quality Index</span>
@@ -384,35 +419,18 @@ export function BookDetail() {
 
 
               {/* Master Meta info */}
-              <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-12 ${isRTL ? 'text-right' : ''}`}>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-10">
                 {[
                   { label: t.book.pages, value: `${book.pages} Pages` },
                   { label: t.book.format, value: book.format?.toUpperCase() || 'MULTI' },
                   { label: 'Era', value: book.published_date ? new Date(book.published_date).getFullYear() : 'Ancient' },
                   { label: t.book.language, value: book.language?.toUpperCase() },
                 ].map(({ label, value }) => (
-                  <div key={label} className="bg-white rounded-[1.5rem] p-5 border border-border shadow-sm group hover:border-accent transition-colors text-center md:text-left">
-                    <p className="text-primary/30 text-\[11px\] font-black uppercase tracking-wider mb-1">{label}</p>
-                    <p className="text-primary font-black text-xs uppercase tracking-wider">{value}</p>
+                  <div key={label} className={`bg-white rounded-2xl p-4 sm:p-5 border border-border shadow-xs group hover:border-accent transition-colors ${isRTL ? 'text-right' : 'text-left'}`}>
+                    <p className="text-primary/40 text-[11px] font-black uppercase tracking-wider mb-1">{label}</p>
+                    <p className="text-primary font-black text-xs sm:text-sm uppercase tracking-wider">{value}</p>
                   </div>
                 ))}
-              </div>
-
-              {/* CTAs */}
-              <div className={`flex flex-wrap gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-
-                
-                {youtubeId && (
-                  <motion.button
-                    onClick={() => setShowTrailer(true)}
-                    className="flex items-center gap-4 px-10 py-6 bg-white border-2 border-primary text-primary rounded-[2rem] font-black uppercase tracking-wider text-xs transition-all"
-                    whileHover={{ y: -4, backgroundColor: 'rgba(139,29,61,0.05)' }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Play size={20} fill="currentColor" />
-                    {isRTL ? 'شاهد الإعلان' : 'Watch Trailer'}
-                  </motion.button>
-                )}
               </div>
             </motion.div>
           </div>

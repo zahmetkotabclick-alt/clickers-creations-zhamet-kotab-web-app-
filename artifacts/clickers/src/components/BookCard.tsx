@@ -5,6 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
+import { normalizeArabicText } from '@/lib/textUtils';
+
 interface BookCardProps {
   book: Record<string, any>;
   variant?: 'default' | 'compact' | 'featured';
@@ -30,7 +32,8 @@ export function BookCard({ book, variant = 'default', index = 0 }: BookCardProps
     });
   };
 
-  const title = language === 'ar' ? (book.title_ar || book.titleAr) : (book.title_en || book.titleEn);
+  const rawTitle = language === 'ar' ? (book.title_ar || book.titleAr) : (book.title_en || book.titleEn);
+  const title = normalizeArabicText(rawTitle || '');
   
   const authorData = Array.isArray(book.authors) ? book.authors[0] : book.authors;
   let authorName = authorData ? (language === 'ar' ? authorData.name_ar : authorData.name_en) : null;
@@ -120,7 +123,11 @@ export function BookCard({ book, variant = 'default', index = 0 }: BookCardProps
             )}
 
             {/* Book Title */}
-            <h3 className="font-arabic font-black text-[#8B1D3D] text-base leading-relaxed line-clamp-2 min-h-[2.8rem] flex items-center mb-2 group-hover:text-[#C89D35] transition-colors" dir={isRTL ? 'rtl' : 'ltr'}>
+            <h3 
+              className="font-arabic font-black text-[#8B1D3D] text-base leading-relaxed line-clamp-2 min-h-[2.8rem] flex items-center mb-2 group-hover:text-[#C89D35] transition-colors break-words [overflow-wrap:break-word] [word-break:keep-all]" 
+              dir={isRTL ? 'rtl' : 'ltr'}
+              style={{ overflowWrap: 'break-word', wordBreak: 'keep-all' }}
+            >
               {title}
             </h3>
 
