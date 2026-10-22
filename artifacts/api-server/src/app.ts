@@ -10,6 +10,11 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// ── REVERSE PROXY: Trust loopback proxy (Hostinger local reverse proxy)
+// Express will only trust X-Forwarded-* headers when coming from local loopback (127.0.0.1, ::1).
+// This allows express-rate-limit to accurately identify client IPs while preventing external header spoofing.
+app.set("trust proxy", "loopback");
+
 // ── SECURITY: Basic HTTP headers hardening
 app.use(helmet({
   contentSecurityPolicy: false, // Configured separately if needed
@@ -51,9 +56,13 @@ app.use(cors({
 }));
 
 // ── LOGGING
+// Note: pino v9 Logger<never,boolean> is structurally incompatible with
+// pino-http v9's Options.logger?: pino.Logger<string> constraint at the type level.
+// We configure pino-http with the same options (level, serializers) and let it
+// create its own internal logger; our `logger` singleton is still used in routes.
 app.use(
   pinoHttp({
-    logger,
+    level: process.env.LOG_LEVEL ?? "info",
     serializers: {
       req(req) {
         return {

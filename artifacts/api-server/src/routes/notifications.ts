@@ -53,18 +53,50 @@ router.post("/new-order", async (req: Request, res: Response): Promise<any> => {
 
     // 2. Security Check: Authenticate caller
     let callerUserId: string | undefined = undefined;
+    let authFailureReason: "missing_header" | "invalid_token" | "auth_service_error" = "missing_header";
+
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.replace("Bearer ", "").trim();
-      const supabase = getSupabaseClient(authHeader);
-      const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
+      if (!token) {
+        authFailureReason = "invalid_token";
+      } else {
+        try {
+          const supabase = getSupabaseClient(authHeader);
+          const authResult = await supabase.auth.getUser(token);
 
-      if (!authErr && user) {
-        callerUserId = user.id;
+          if (!authResult.error && authResult.data?.user?.id) {
+            callerUserId = authResult.data.user.id;
+          } else {
+            authFailureReason = "invalid_token";
+            if (authResult.error) {
+              logger.warn(
+                { err: authResult.error.message, orderId },
+                "[Order Notification Route] Supabase auth rejected token."
+              );
+            }
+          }
+        } catch (authException: any) {
+          authFailureReason = "auth_service_error";
+          logger.error(
+            {
+              message: authException?.message || "Unknown auth exception",
+              stack: authException?.stack,
+              orderId,
+            },
+            "[Order Notification Route] Exception during Supabase auth verification."
+          );
+        }
       }
     }
 
     if (!callerUserId) {
-      logger.warn({ orderId, ip: req.ip }, "[Order Notification Route] Unauthenticated request rejected.");
+      logger.warn(
+        { orderId, ip: req.ip, reason: authFailureReason },
+        "[Order Notification Route] Unauthenticated request rejected."
+      );
+      if (authFailureReason === "auth_service_error") {
+        return res.status(503).json({ error: "Authentication service temporarily unavailable" });
+      }
       return res.status(401).json({ error: "Authentication required to notify order" });
     }
 
@@ -84,7 +116,13 @@ router.post("/new-order", async (req: Request, res: Response): Promise<any> => {
     // 4. Immediate clean response to frontend
     return res.status(200).json({ success: true, message: "Notification queued" });
   } catch (error: any) {
-    logger.error({ error: error?.message || error }, "[Order Notification Route] Server error.");
+    logger.error(
+      {
+        message: error?.message || "Unknown error",
+        stack: error?.stack,
+      },
+      "[Order Notification Route] Unexpected server error."
+    );
     return res.status(500).json({ error: "Failed to process notification" });
   }
 });
@@ -96,15 +134,30 @@ router.post("/new-order", async (req: Request, res: Response): Promise<any> => {
 router.post("/test-telegram", async (req: Request, res: Response): Promise<any> => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const supabase = getSupabaseClient(authHeader);
     const token = authHeader.replace("Bearer ", "").trim();
-    const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
+    if (!token) {
+      return res.status(401).json({ error: "Invalid session token" });
+    }
 
-    if (authErr || !user) {
+    const supabase = getSupabaseClient(authHeader);
+    let user: any = null;
+    try {
+      const authResult = await supabase.auth.getUser(token);
+      if (!authResult.error && authResult.data?.user) {
+        user = authResult.data.user;
+      }
+    } catch (authException: any) {
+      logger.error(
+        { message: authException?.message, stack: authException?.stack },
+        "[Test Telegram Route] Auth verification exception."
+      );
+    }
+
+    if (!user) {
       return res.status(401).json({ error: "Invalid session token" });
     }
 
