@@ -115,21 +115,26 @@ export function formatOrderStatus(status?: string): string {
 /**
  * Instantiates a server-side Supabase client with either service key or user auth header.
  */
+// Node.js 20 has no native WebSocket. Disable Realtime on server-side client.
+const SUPABASE_NO_REALTIME = {
+  realtime: { params: { eventsPerSecond: 0 } },
+  global: { fetch: fetch.bind(globalThis) },
+} as const;
+
 function getSupabaseClient(authHeader?: string): SupabaseClient {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://biugvsoxsvyfuouekomd.supabase.co";
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWd2c294c3Z5ZnVvdWVrb21kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5NTc1MzYsImV4cCI6MjA5MTUzMzUzNn0.VibSfRoaC--40buZA5BL_kr910E07Lys2_0_9jsz88Q";
 
   if (serviceKey) {
-    return createClient(url, serviceKey);
+    return createClient(url, serviceKey, SUPABASE_NO_REALTIME);
   }
 
-  const options: any = {};
+  const options: any = { ...SUPABASE_NO_REALTIME };
   if (authHeader) {
     options.global = {
-      headers: {
-        Authorization: authHeader,
-      },
+      ...SUPABASE_NO_REALTIME.global,
+      headers: { Authorization: authHeader },
     };
   }
   return createClient(url, anonKey, options);
