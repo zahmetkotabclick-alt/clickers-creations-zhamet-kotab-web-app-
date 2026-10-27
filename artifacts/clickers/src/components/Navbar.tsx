@@ -63,7 +63,7 @@ export function Navbar() {
                 <img 
                   src="/logo.png" 
                   alt="Zahmet Kotab Logo" 
-                  className="h-10 md:h-11 w-auto object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300" 
+                  className="h-10 md:h-12 w-auto object-contain drop-shadow-[0_3px_6px_rgba(44,24,16,0.18)] group-hover:scale-105 transition-transform duration-300" 
                 />
                 <div className="flex flex-col">
                   <span className="font-arabic font-black text-xl md:text-2xl leading-tight text-primary drop-shadow-sm">

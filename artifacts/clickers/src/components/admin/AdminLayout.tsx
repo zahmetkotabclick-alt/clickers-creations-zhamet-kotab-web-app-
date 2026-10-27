@@ -41,8 +41,8 @@ function AdminSidebar({
       <div className="px-6 py-8 border-b border-white/10">
         <Link href="/">
           <div className="flex items-center gap-3 cursor-pointer">
-            <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center">
-              <span className="text-primary font-cinematic font-bold text-lg">ز</span>
+            <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center p-1.5 border border-accent/30 shadow-sm">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-sm" />
             </div>
             <div>
               <p className="text-white font-bold text-sm font-arabic">زحمة كتاب</p>
