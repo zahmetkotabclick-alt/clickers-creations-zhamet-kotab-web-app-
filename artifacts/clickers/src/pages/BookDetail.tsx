@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { 
   Star, ShoppingCart, BookOpen, Play, Music, 
   ArrowLeft, ArrowRight, Tag, ShieldCheck, MessageCircle,
-  BarChart3, X, Volume2, VolumeX
+  BarChart3, X, Volume2, VolumeX, Share2
 } from 'lucide-react';
 import { BookCard } from '@/components/BookCard';
 import { useLanguage } from '@/i18n/LanguageContext';
@@ -128,6 +128,49 @@ export function BookDetail() {
       toast({ title: err?.message || 'Failed to save review', variant: 'destructive' });
     } finally {
       setIsRating(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const shareTitle = title || 'زحمة كتاب';
+    const shareText = language === 'ar' ? `كتاب: ${shareTitle} - دار زحمة كتاب` : `Book: ${shareTitle} - Zahmet Kotab`;
+
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url,
+        });
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = url;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+      toast({
+        title: language === 'ar' ? 'تم نسخ رابط الكتاب! 📋' : 'Book link copied! 📋',
+        description: language === 'ar' ? 'يمكنك الآن مشاركته مع أصدقائك.' : 'You can now paste and share it anywhere.',
+      });
+    } catch {
+      toast({
+        title: language === 'ar' ? 'تم نسخ الرابط!' : 'Link copied!',
+      });
     }
   };
 
@@ -319,6 +362,17 @@ export function BookDetail() {
                       <span>{isRTL ? 'شاهد الإعلان' : 'Watch Trailer'}</span>
                     </motion.button>
                   )}
+
+                  <motion.button
+                    onClick={handleShare}
+                    className="inline-flex items-center gap-2.5 px-6 py-4 bg-white border-2 border-primary/20 text-primary rounded-2xl font-black text-xs uppercase tracking-wider transition-all hover:bg-primary/5 hover:border-primary active:scale-95 cursor-pointer shadow-xs"
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.96 }}
+                    title={isRTL ? 'مشاركة الكتاب' : 'Share Book'}
+                  >
+                    <Share2 size={16} />
+                    <span>{isRTL ? 'مشاركة' : 'Share'}</span>
+                  </motion.button>
                 </div>
               </div>
 

@@ -1,10 +1,29 @@
+import { useState } from 'react';
 import { motion, useScroll, useSpring } from 'framer-motion';
-import { Calendar, User, Clock, ArrowLeft, ChevronRight, Share2, Facebook, Twitter, Link2 } from 'lucide-react';
+import { Calendar, User, Clock, ArrowLeft, ChevronRight, Share2, Facebook, Twitter, Link2, MessageCircle, Check } from 'lucide-react';
 import { Link, useRoute } from 'wouter';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useBlogPost } from '@/services/supabase.hooks';
 import { Button } from '@/components/ui/button';
 import { sanitizeHTML } from '@/lib/security';
+import { useToast } from '@/hooks/use-toast';
+
+function fallbackCopyText(text: string) {
+  try {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    textArea.style.top = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textArea);
+  } catch (e) {
+    console.error('Fallback copy failed', e);
+  }
+}
 
 export function BlogPostDetail() {
   const [, params] = useRoute('/blog/:id');
@@ -12,6 +31,91 @@ export function BlogPostDetail() {
   const { data: post, isLoading } = useBlogPost(params?.id);
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  const handleShare = async (platform?: 'facebook' | 'twitter' | 'whatsapp' | 'copy') => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const shareTitle = (language === 'ar' ? post?.title_ar : post?.title_en) || 'زحمة كتاب';
+    const shareText = (language === 'ar' ? post?.excerpt_ar : post?.excerpt_en) || shareTitle;
+
+    if (platform === 'facebook') {
+      window.open(
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+        '_blank',
+        'noopener,noreferrer,width=600,height=500'
+      );
+      return;
+    }
+
+    if (platform === 'twitter') {
+      window.open(
+        `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareTitle)}`,
+        '_blank',
+        'noopener,noreferrer,width=600,height=500'
+      );
+      return;
+    }
+
+    if (platform === 'whatsapp') {
+      window.open(
+        `https://api.whatsapp.com/send?text=${encodeURIComponent(shareTitle + '\n' + url)}`,
+        '_blank',
+        'noopener,noreferrer'
+      );
+      return;
+    }
+
+    if (platform === 'copy') {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+        } else {
+          fallbackCopyText(url);
+        }
+      } catch {
+        fallbackCopyText(url);
+      }
+      setCopied(true);
+      toast({
+        title: isRTL ? 'تم نسخ الرابط بنجاح! 📋' : 'Link copied to clipboard! 📋',
+        description: isRTL ? 'يمكنك الآن مشاركته في أي مكان.' : 'You can now paste and share it anywhere.',
+      });
+      setTimeout(() => setCopied(false), 2500);
+      return;
+    }
+
+    // Default: Native Share if available (mobile & modern browsers)
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url,
+        });
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return; // User cancelled
+      }
+    }
+
+    // Fallback: Copy link and show toast
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        fallbackCopyText(url);
+      }
+    } catch {
+      fallbackCopyText(url);
+    }
+    setCopied(true);
+    toast({
+      title: isRTL ? 'تم نسخ رابط المقال! 📋' : 'Article link copied! 📋',
+      description: isRTL ? 'يمكنك الآن لصقه ومشاركته في أي مكان.' : 'You can now paste and share it anywhere.',
+    });
+    setTimeout(() => setCopied(false), 2500);
+  };
 
   if (isLoading) {
     return (
@@ -133,18 +237,51 @@ export function BlogPostDetail() {
       {/* Article Content */}
       <article className="max-w-4xl mx-auto px-4 pb-32 flex flex-col md:flex-row gap-16">
         {/* Social Share (Desktop Sidebar) */}
-        <div className="hidden md:flex flex-col gap-6 sticky top-32 h-fit">
-          <Button variant="outline" size="icon" className="rounded-2xl w-14 h-14 border-primary/10 hover:bg-accent hover:text-white transition-all transform hover:-rotate-12">
-            <Facebook size={20} />
-          </Button>
-          <Button variant="outline" size="icon" className="rounded-2xl w-14 h-14 border-primary/10 hover:bg-accent hover:text-white transition-all transform hover:rotate-12">
-            <Twitter size={20} />
-          </Button>
-          <Button variant="outline" size="icon" className="rounded-2xl w-14 h-14 border-primary/10 hover:bg-accent hover:text-white transition-all">
-            <Link2 size={20} />
-          </Button>
-          <div className="h-20 w-px bg-border mx-auto" />
-          <span className="[writing-mode:vertical-lr] text-xs font-black uppercase tracking-wider text-primary/20 rotate-180">Share Story</span>
+        <div className={`hidden md:flex flex-col gap-3.5 sticky top-32 h-fit ${isRTL ? 'items-end' : 'items-start'}`}>
+          <button 
+            type="button"
+            title={isRTL ? 'مشاركة عبر فيسبوك' : 'Share on Facebook'}
+            onClick={() => handleShare('facebook')}
+            className="w-12 h-12 rounded-2xl border border-primary/10 bg-white text-primary flex items-center justify-center hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2] transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <Facebook size={18} />
+          </button>
+          
+          <button 
+            type="button"
+            title={isRTL ? 'مشاركة عبر X / تويتر' : 'Share on X'}
+            onClick={() => handleShare('twitter')}
+            className="w-12 h-12 rounded-2xl border border-primary/10 bg-white text-primary flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <Twitter size={18} />
+          </button>
+
+          <button 
+            type="button"
+            title={isRTL ? 'مشاركة عبر واتساب' : 'Share on WhatsApp'}
+            onClick={() => handleShare('whatsapp')}
+            className="w-12 h-12 rounded-2xl border border-primary/10 bg-white text-[#25D366] flex items-center justify-center hover:bg-[#25D366] hover:text-white hover:border-[#25D366] transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <MessageCircle size={18} />
+          </button>
+
+          <button 
+            type="button"
+            title={isRTL ? 'نسخ رابط المقال' : 'Copy link'}
+            onClick={() => handleShare('copy')}
+            className={`w-12 h-12 rounded-2xl border transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+              copied 
+                ? 'bg-green-600 text-white border-green-600' 
+                : 'border-primary/10 bg-white text-primary hover:bg-accent hover:text-primary hover:border-accent'
+            }`}
+          >
+            {copied ? <Check size={18} /> : <Link2 size={18} />}
+          </button>
+
+          <div className="h-16 w-px bg-border mx-auto my-2" />
+          <span className="[writing-mode:vertical-lr] text-[10px] font-black uppercase tracking-widest text-primary/30 rotate-180 select-none">
+            {isRTL ? 'مشاركة' : 'Share Story'}
+          </span>
         </div>
 
         {/* Main Text Content */}
@@ -164,17 +301,67 @@ export function BlogPostDetail() {
             dangerouslySetInnerHTML={{ __html: sanitizeHTML(content || '') }}
           />
 
-          {/* Footer Tags/Credits */}
-          <div className="mt-24 pt-12 border-t border-border flex flex-wrap items-center justify-between gap-8">
+          {/* Footer Tags/Credits & Share Bar */}
+          <div className="mt-24 pt-12 border-t border-border flex flex-wrap items-center justify-between gap-6">
             <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <span className="text-primary/40 font-bold uppercase tracking-wider text-xs">Category:</span>
-              <span className="px-4 py-1 bg-accent/10 text-accent rounded-full text-xs font-black uppercase tracking-wider">{post.category}</span>
+              <span className="text-primary/40 font-bold uppercase tracking-wider text-xs">
+                {isRTL ? 'التصنيف:' : 'Category:'}
+              </span>
+              <span className="px-4 py-1.5 bg-accent/10 text-accent rounded-full text-xs font-black uppercase tracking-wider">
+                {post.category}
+              </span>
             </div>
             
-            <Button variant="outline" className="rounded-2xl gap-3 font-bold border-primary/10 px-8 py-6 h-auto hover:bg-primary hover:text-white transition-all duration-500">
-              <Share2 size={18} />
-              <span>Share this insight</span>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Button 
+                onClick={() => handleShare()}
+                variant="outline" 
+                className="rounded-2xl gap-2.5 font-bold border-primary/20 px-6 py-5 h-auto hover:bg-primary hover:text-white transition-all duration-300 shadow-sm cursor-pointer text-xs uppercase tracking-wider"
+              >
+                <Share2 size={16} />
+                <span>{isRTL ? 'مشاركة المقال' : 'Share this insight'}</span>
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => handleShare('whatsapp')}
+                className="w-11 h-11 rounded-2xl bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 flex items-center justify-center hover:bg-[#25D366] hover:text-white transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+                title={isRTL ? 'مشاركة عبر واتساب' : 'Share on WhatsApp'}
+              >
+                <MessageCircle size={18} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleShare('facebook')}
+                className="w-11 h-11 rounded-2xl bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20 flex items-center justify-center hover:bg-[#1877F2] hover:text-white transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+                title={isRTL ? 'مشاركة عبر فيسبوك' : 'Share on Facebook'}
+              >
+                <Facebook size={18} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleShare('twitter')}
+                className="w-11 h-11 rounded-2xl bg-black/5 text-black border border-black/10 flex items-center justify-center hover:bg-black hover:text-white transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+                title={isRTL ? 'مشاركة عبر X / تويتر' : 'Share on X'}
+              >
+                <Twitter size={18} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleShare('copy')}
+                className={`w-11 h-11 rounded-2xl border flex items-center justify-center transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer ${
+                  copied 
+                    ? 'bg-green-600 text-white border-green-600' 
+                    : 'bg-primary/5 text-primary border-primary/10 hover:bg-primary hover:text-white'
+                }`}
+                title={isRTL ? 'نسخ الرابط' : 'Copy link'}
+              >
+                {copied ? <Check size={18} /> : <Link2 size={18} />}
+              </button>
+            </div>
           </div>
         </div>
       </article>
