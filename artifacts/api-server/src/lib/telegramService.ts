@@ -92,6 +92,7 @@ export function formatPaymentMethod(method?: string): string {
   if (!method) return "غير محدد";
   const m = method.toLowerCase();
   if (m === "instapay") return "انستا باي (InstaPay)";
+  if (m === "etisalat_cash") return "اتصالات كاش (Etisalat Cash)";
   if (m === "vodafone_cash") return "فودافون كاش (Vodafone Cash)";
   if (m === "cod" || m === "cash") return "الدفع عند الاستلام (COD)";
   if (m === "paymob" || m === "card") return "بطاقة بنكية (Paymob)";

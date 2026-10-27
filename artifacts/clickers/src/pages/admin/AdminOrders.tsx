@@ -18,6 +18,7 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; icon: typeof Clock; co
 const PM_LABEL: Record<string, string> = {
   bank_transfer: 'Bank Transfer',
   instapay: 'InstaPay',
+  etisalat_cash: 'Etisalat Cash',
   vodafone_cash: 'Vodafone Cash',
   stripe: 'Online (Stripe)',
 };
@@ -177,7 +178,7 @@ export function AdminOrders() {
                               </div>
 
                               {/* Transaction ID row */}
-                              {['bank_transfer', 'instapay', 'vodafone_cash'].includes(pm) && (
+                              {['bank_transfer', 'instapay', 'etisalat_cash', 'vodafone_cash'].includes(pm) && (
                                 <div className={`flex items-center justify-between px-6 py-4 border-t ${txId ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100'}`}>
                                   <div>
                                     <p className={`text-xs font-black uppercase tracking-wider mb-1 ${txId ? 'text-green-600' : 'text-amber-600'}`}>

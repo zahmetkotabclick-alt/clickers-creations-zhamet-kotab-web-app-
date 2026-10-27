@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'wouter';
-import { ShoppingBag, CheckCircle, CreditCard, ArrowRight, Trash2, AlertCircle } from 'lucide-react';
+import { ShoppingBag, CheckCircle, CreditCard, ArrowRight, Trash2, AlertCircle, ExternalLink, Copy, Check } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateOrder } from '@/services/supabase.hooks';
@@ -18,7 +18,8 @@ export function CheckoutPage() {
   const [, navigate] = useLocation();
 
   const [step, setStep] = useState<Step>('cart');
-  const [paymentMethod, setPaymentMethod] = useState<'instapay' | 'vodafone_cash'>('instapay');
+  const [paymentMethod, setPaymentMethod] = useState<'instapay' | 'etisalat_cash' | 'vodafone_cash'>('instapay');
+  const [copiedKey, setCopiedKey] = useState<'instapay' | 'etisalat' | null>(null);
   const [transactionId, setTransactionId] = useState('');
   const [orderId, setOrderId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: profile?.full_name || '', phone: profile?.phone || '', address: '', notes: '' });
@@ -40,7 +41,7 @@ export function CheckoutPage() {
         paymentMethod,
         shippingAddress: formData.address,
         notes: formData.notes,
-        transactionId: ['instapay', 'vodafone_cash'].includes(paymentMethod) ? transactionId : undefined,
+        transactionId: ['instapay', 'etisalat_cash', 'vodafone_cash'].includes(paymentMethod) ? transactionId : undefined,
       });
       setOrderId(order.id as string);
       clear();
@@ -259,8 +260,16 @@ export function CheckoutPage() {
                     </h3>
                     <div className="space-y-3">
                       {([
-                        { value: 'instapay', label: 'InstaPay', desc: isRTL ? 'تحويل فوري عبر انستا باي' : 'Instant transfer via InstaPay' },
-                        { value: 'vodafone_cash', label: isRTL ? 'فودافون كاش' : 'Vodafone Cash', desc: isRTL ? 'تحويل عبر محفظة فودافون' : 'Transfer via Vodafone wallet' },
+                        { 
+                          value: 'instapay', 
+                          label: 'InstaPay', 
+                          desc: isRTL ? 'تحويل فوري عبر انستا باي' : 'Instant transfer via InstaPay' 
+                        },
+                        { 
+                          value: 'etisalat_cash', 
+                          label: isRTL ? 'اتصالات كاش' : 'Etisalat Cash', 
+                          desc: isRTL ? 'تحويل عبر محفظة اتصالات كاش' : 'Transfer via Etisalat Cash wallet' 
+                        },
                       ] as const).map((method) => (
                         <label key={method.value} className={`flex items-center gap-4 p-5 border-2 rounded-2xl cursor-pointer transition-all ${paymentMethod === method.value ? 'border-primary bg-primary/5' : 'border-border bg-white hover:border-primary/30'} ${isRTL ? 'flex-row-reverse' : ''}`}>
                           <input
@@ -284,37 +293,119 @@ export function CheckoutPage() {
                     </div>
 
                     <AnimatePresence>
-                      {['instapay', 'vodafone_cash'].includes(paymentMethod) && (
+                      {['instapay', 'etisalat_cash', 'vodafone_cash'].includes(paymentMethod) && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
                           className="overflow-hidden"
                         >
-                          {/* Step 1: Send money to this number */}
-                          <div className={`p-5 mt-3 bg-accent/8 border-2 border-accent/20 rounded-2xl ${isRTL ? 'text-right' : ''}`}>
-                            <p className="text-xs font-black uppercase tracking-wider text-accent mb-3 flex items-center gap-2">
-                              <span className="w-5 h-5 rounded-full bg-accent text-white flex items-center justify-center text-xs font-black flex-shrink-0">1</span>
-                              {isRTL ? 'حوّل المبلغ على الرقم التالي' : 'Send Your Payment To This Number'}
-                            </p>
-                            <div className={`flex items-center justify-between gap-3 bg-white border border-accent/20 rounded-xl px-5 py-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                              <div>
-                                <p className="font-mono font-black text-primary text-xl tracking-wider">01011088867</p>
-                                <p className="text-primary/40 text-xs font-bold mt-0.5">
-                                  {paymentMethod === 'instapay'
-                                    ? (isRTL ? 'حساب انستا باي' : 'InstaPay Account')
-                                    : (isRTL ? 'محفظة فودافون كاش' : 'Vodafone Cash Wallet')}
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => { navigator.clipboard.writeText('01011088867'); }}
-                                className="text-xs font-black uppercase tracking-wider text-accent hover:text-primary transition-colors border border-accent/30 rounded-xl px-3 py-2 hover:border-primary/30"
+                          {/* Step 1 for InstaPay */}
+                          {paymentMethod === 'instapay' && (
+                            <div className={`p-5 mt-3 bg-accent/8 border-2 border-accent/20 rounded-2xl ${isRTL ? 'text-right' : ''}`}>
+                              <p className="text-xs font-black uppercase tracking-wider text-accent mb-3 flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-accent text-white flex items-center justify-center text-xs font-black flex-shrink-0">1</span>
+                                {isRTL ? 'حوّل المبلغ عبر رابط إنستا باي' : 'Send Payment via InstaPay Link'}
+                              </p>
+
+                              {/* Direct InstaPay Payment Link */}
+                              <a
+                                href="https://ipn.eg/S/zahmetkottab/instapay/6OImqj"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between gap-3 p-4 mb-3 rounded-xl bg-gradient-to-r from-[#8B1D3D] via-[#751631] to-[#551023] text-white hover:brightness-110 transition-all shadow-md group cursor-pointer border border-amber-300/30"
                               >
-                                {isRTL ? 'نسخ' : 'Copy'}
-                              </button>
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+                                    <ExternalLink size={18} className="text-amber-300 group-hover:scale-110 transition-transform" />
+                                  </div>
+                                  <div className={isRTL ? 'text-right' : 'text-left'}>
+                                    <p className="font-black text-sm text-white">
+                                      {isRTL ? 'اضغط الرابط لإرسال نقود عبر InstaPay' : 'Click to Send Money via InstaPay'}
+                                    </p>
+                                    <p className="text-[11px] text-amber-200/90 font-medium">
+                                      Powered by InstaPay
+                                    </p>
+                                  </div>
+                                </div>
+                                <span className="text-xs font-black bg-white/20 text-white px-3.5 py-1.5 rounded-lg border border-white/20 group-hover:bg-white group-hover:text-primary transition-all flex-shrink-0">
+                                  {isRTL ? 'فتح الرابط ↗' : 'Open Link ↗'}
+                                </span>
+                              </a>
+
+                              {/* IPA Address Info & Copy Box */}
+                              <div className={`flex items-center justify-between gap-3 bg-white border border-accent/20 rounded-xl px-5 py-3.5 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                <div className={isRTL ? 'text-right' : 'text-left'}>
+                                  <p className="font-mono font-black text-primary text-base sm:text-lg tracking-wider">
+                                    zahmetkottab@instapay
+                                  </p>
+                                  <p className="text-primary/40 text-xs font-bold mt-0.5">
+                                    {isRTL ? 'عنوان الدفع اللحظي (IPA)' : 'InstaPay Payment Address'}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText('zahmetkottab@instapay');
+                                    setCopiedKey('instapay');
+                                    setTimeout(() => setCopiedKey(null), 2500);
+                                  }}
+                                  className="text-xs font-black uppercase tracking-wider text-accent hover:text-primary transition-colors border border-accent/30 rounded-xl px-3.5 py-2 hover:border-primary/30 flex items-center gap-1.5"
+                                >
+                                  {copiedKey === 'instapay' ? (
+                                    <>
+                                      <Check size={14} className="text-green-600" />
+                                      <span className="text-green-600">{isRTL ? 'تم النسخ' : 'Copied'}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy size={14} />
+                                      <span>{isRTL ? 'نسخ' : 'Copy'}</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
                             </div>
-                          </div>
+                          )}
+
+                          {/* Step 1 for Etisalat Cash (or legacy Vodafone Cash) */}
+                          {(paymentMethod === 'etisalat_cash' || paymentMethod === 'vodafone_cash') && (
+                            <div className={`p-5 mt-3 bg-accent/8 border-2 border-accent/20 rounded-2xl ${isRTL ? 'text-right' : ''}`}>
+                              <p className="text-xs font-black uppercase tracking-wider text-accent mb-3 flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-accent text-white flex items-center justify-center text-xs font-black flex-shrink-0">1</span>
+                                {isRTL ? 'حوّل المبلغ على محفظة اتصالات كاش' : 'Send Your Payment to Etisalat Cash Wallet'}
+                              </p>
+                              <div className={`flex items-center justify-between gap-3 bg-white border border-accent/20 rounded-xl px-5 py-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                <div className={isRTL ? 'text-right' : 'text-left'}>
+                                  <p className="font-mono font-black text-primary text-xl tracking-wider">01100662595</p>
+                                  <p className="text-primary/40 text-xs font-bold mt-0.5">
+                                    {isRTL ? 'محفظة اتصالات كاش (Etisalat Cash)' : 'Etisalat Cash Wallet'}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText('01100662595');
+                                    setCopiedKey('etisalat');
+                                    setTimeout(() => setCopiedKey(null), 2500);
+                                  }}
+                                  className="text-xs font-black uppercase tracking-wider text-accent hover:text-primary transition-colors border border-accent/30 rounded-xl px-3.5 py-2 hover:border-primary/30 flex items-center gap-1.5"
+                                >
+                                  {copiedKey === 'etisalat' ? (
+                                    <>
+                                      <Check size={14} className="text-green-600" />
+                                      <span className="text-green-600">{isRTL ? 'تم النسخ' : 'Copied'}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy size={14} />
+                                      <span>{isRTL ? 'نسخ' : 'Copy'}</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Step 2: Enter transaction ID */}
                           <div className={`p-5 mt-2 bg-primary/5 border border-primary/10 rounded-2xl ${isRTL ? 'text-right' : ''}`}>
@@ -362,7 +453,7 @@ export function CheckoutPage() {
 
                   <div className="flex flex-col gap-3">
                     {(() => {
-                      const isPaymentIncomplete = ['instapay', 'vodafone_cash'].includes(paymentMethod) && !transactionId.trim();
+                      const isPaymentIncomplete = ['instapay', 'etisalat_cash', 'vodafone_cash'].includes(paymentMethod) && !transactionId.trim();
                       const isDisabled = !profile || createOrder.isPending || !formData.address.trim() || !formData.phone.trim() || isPaymentIncomplete;
                       
                       return (

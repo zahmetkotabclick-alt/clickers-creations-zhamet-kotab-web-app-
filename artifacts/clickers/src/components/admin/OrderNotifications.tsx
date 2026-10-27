@@ -7,6 +7,7 @@ import type { NewOrderPayload } from '@/hooks/useAdminOrderNotifications';
 const PM_LABEL: Record<string, string> = {
   bank_transfer: 'Bank Transfer',
   instapay: 'InstaPay',
+  etisalat_cash: 'Etisalat Cash',
   vodafone_cash: 'Vodafone Cash',
   stripe: 'Online (Stripe)',
 };
