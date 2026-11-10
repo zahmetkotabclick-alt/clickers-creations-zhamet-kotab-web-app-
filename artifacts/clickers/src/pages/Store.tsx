@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SlidersHorizontal, Search, X } from 'lucide-react';
+import { SlidersHorizontal, Search, X, Flame } from 'lucide-react';
 import { BookCard } from '@/components/BookCard';
 import { SectionHeader } from '@/components/SectionHeader';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useBooks } from '@/services/supabase.hooks';
 import { useSmartSearch } from '@/hooks/useSmartSearch';
 import { useDiscovery } from '@/hooks/useDiscovery';
+import { useCampaign } from '@/contexts/CampaignContext';
 
 type SortOption = 'newest' | 'popular' | 'priceAsc' | 'priceDesc';
 type GenreFilter = 'all' | 'Fantasy' | 'Sci-Fi' | 'Historical' | 'Horror' | 'Romance' | 'Adventure' | 'Literary' | 'Mystery';
@@ -14,6 +15,7 @@ type FormatFilter = 'all' | 'digital' | 'physical';
 
 export function Store() {
   const { t, isRTL, language } = useLanguage();
+  const { campaign, isActive, discountPercent, getPricing } = useCampaign();
   const { data: books, isLoading } = useBooks({ status: undefined });
   const [search, setSearch] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<GenreFilter>('all');
@@ -62,15 +64,23 @@ export function Store() {
         result.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
         break;
       case 'priceAsc':
-        result.sort((a, b) => a.price - b.price);
+        result.sort((a, b) => {
+          const priceA = getPricing(a.price, a.original_price).effectivePrice;
+          const priceB = getPricing(b.price, b.original_price).effectivePrice;
+          return priceA - priceB;
+        });
         break;
       case 'priceDesc':
-        result.sort((a, b) => b.price - a.price);
+        result.sort((a, b) => {
+          const priceA = getPricing(a.price, a.original_price).effectivePrice;
+          const priceB = getPricing(b.price, b.original_price).effectivePrice;
+          return priceB - priceA;
+        });
         break;
     }
 
     return result;
-  }, [books, search, selectedGenre, selectedFormat, sortBy]);
+  }, [books, search, selectedGenre, selectedFormat, sortBy, getPricing]);
 
   return (
     <div className="min-h-screen pt-32 pb-32 bg-[#FDFBF7]">
@@ -79,6 +89,40 @@ export function Store() {
           title={t.store.title}
           subtitle={t.store.subtitle}
         />
+
+        {/* Active Promotional Campaign Event Banner */}
+        {isActive && campaign && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-10 p-6 sm:p-8 rounded-[2rem] bg-gradient-to-r from-[#8B1D3D] via-[#A81B34] to-[#7E1225] text-white border-2 border-[#C89D35]/40 shadow-xl flex flex-wrap items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10">
+                <Flame className="text-[#FFDF79] fill-[#FFDF79] animate-pulse" size={30} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="px-3 py-0.5 rounded-full bg-[#C89D35]/20 text-[#FFDF79] text-xs font-black uppercase tracking-wider">
+                    {isRTL ? 'فعالية ترويجية نشطة' : 'Live Promotional Event'}
+                  </span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black font-arabic text-white drop-shadow-sm">
+                  {campaign.name}
+                </h3>
+                <p className="text-white/80 text-xs sm:text-sm font-arabic font-bold mt-1">
+                  {isRTL
+                    ? `خصم ${discountPercent}% مطبق تلقائياً على جميع الكتب المعروضة في المتجر.`
+                    : `Automatic ${discountPercent}% discount active on all catalog books.`}
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-3 rounded-2xl bg-[#C89D35] text-[#2A0E17] font-black font-cinematic text-2xl sm:text-3xl shadow-lg">
+              -{discountPercent}% OFF
+            </div>
+          </motion.div>
+        )}
 
         {/* Search and Action Bar */}
         <div className={`flex flex-col lg:flex-row gap-6 mb-12 items-center ${isRTL ? 'lg:flex-row-reverse' : ''}`}>

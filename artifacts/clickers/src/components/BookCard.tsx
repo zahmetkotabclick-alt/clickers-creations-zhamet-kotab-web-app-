@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import { Star, Eye } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useCampaign } from '@/contexts/CampaignContext';
 import { supabase } from '@/lib/supabase';
 
 import { normalizeArabicText } from '@/lib/textUtils';
@@ -15,6 +16,7 @@ interface BookCardProps {
 
 export function BookCard({ book, variant = 'default', index = 0 }: BookCardProps) {
   const { t, isRTL, language } = useLanguage();
+  const { getPricing, isActive } = useCampaign();
   const queryClient = useQueryClient();
 
   const handlePrefetch = () => {
@@ -41,9 +43,7 @@ export function BookCard({ book, variant = 'default', index = 0 }: BookCardProps
     authorName = language === 'ar' ? book.authorNameAr : book.authorNameEn;
   }
   
-  const discount = (book.original_price || book.originalPrice)
-    ? Math.round((1 - book.price / (book.original_price || book.originalPrice)) * 100)
-    : null;
+  const pricing = getPricing(book.price, book.original_price || book.originalPrice);
 
   return (
     <motion.div
@@ -83,19 +83,28 @@ export function BookCard({ book, variant = 'default', index = 0 }: BookCardProps
                     {isRTL ? 'جديد' : 'NEW'}
                   </span>
                 )}
-                {discount && (
-                  <span className="px-2.5 py-1 bg-[#8B1D3D] text-white text-[11px] font-black rounded-lg shadow-md">
-                    -{discount}%
+                {pricing.hasDiscount && pricing.discountPercent && (
+                  <span className={`px-2.5 py-1 text-[11px] font-black rounded-lg shadow-md ${
+                    isActive
+                      ? 'bg-gradient-to-r from-[#C89D35] to-[#E6C362] text-[#2A0E17]'
+                      : 'bg-[#8B1D3D] text-white'
+                  }`}>
+                    -{pricing.discountPercent}%
                   </span>
                 )}
               </div>
 
               {/* Price Tag Pill on Top Corner */}
               <div className={`absolute top-3 ${isRTL ? 'left-3' : 'right-3'} z-20`}>
-                <div className="bg-[#8B1D3D]/95 backdrop-blur-md px-3 py-1 rounded-full border border-amber-300/30 shadow-md">
+                <div className="bg-[#8B1D3D]/95 backdrop-blur-md px-3 py-1 rounded-full border border-amber-300/30 shadow-md flex items-center gap-1.5">
                   <span className="text-white font-black text-xs">
-                    {book.price} <span className="text-[10px] font-bold opacity-80">{t.common.currency}</span>
+                    {pricing.effectivePrice} <span className="text-[10px] font-bold opacity-80">{t.common.currency}</span>
                   </span>
+                  {pricing.originalPrice && (
+                    <span className="text-white/50 line-through text-[10px] font-bold">
+                      {pricing.originalPrice}
+                    </span>
+                  )}
                 </div>
               </div>
 

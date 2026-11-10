@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'wouter';
-import { ShoppingBag, CheckCircle, CreditCard, ArrowRight, Trash2, AlertCircle, ExternalLink, Copy, Check } from 'lucide-react';
+import { ShoppingBag, CheckCircle, CreditCard, ArrowRight, Trash2, AlertCircle, ExternalLink, Copy, Check, Flame } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCampaign } from '@/contexts/CampaignContext';
 import { useCreateOrder } from '@/services/supabase.hooks';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { supabase } from '@/lib/supabase';
@@ -13,6 +14,7 @@ type Step = 'cart' | 'details' | 'confirmation';
 export function CheckoutPage() {
   const { items, totalPrice, totalItems, clear } = useCart();
   const { profile } = useAuth();
+  const { campaign, isActive, discountPercent } = useCampaign();
   const { isRTL, t } = useLanguage();
   const createOrder = useCreateOrder();
   const [, navigate] = useLocation();
@@ -146,6 +148,20 @@ export function CheckoutPage() {
                     <h3 className={`text-lg font-black text-primary mb-6 ${isRTL ? 'font-arabic text-right' : 'font-cinematic'}`}>
                       {isRTL ? 'ملخص الطلب' : 'Order Summary'}
                     </h3>
+
+                    {/* Active Promotional Campaign Notice */}
+                    {isActive && campaign && (
+                      <div className="bg-[#8B1D3D]/5 border border-[#8B1D3D]/20 rounded-2xl p-3.5 mb-6 flex items-center justify-between shadow-xs">
+                        <div className="flex items-center gap-2">
+                          <Flame size={16} className="text-[#8B1D3D] fill-[#8B1D3D] animate-pulse" />
+                          <span className="text-xs font-black text-[#8B1D3D] font-arabic">{campaign.name}</span>
+                        </div>
+                        <span className="text-xs font-black bg-gradient-to-r from-[#8B1D3D] to-[#A81B34] text-white px-2.5 py-0.5 rounded-lg shadow-xs">
+                          -{discountPercent}%
+                        </span>
+                      </div>
+                    )}
+
                     <div className="space-y-3 mb-6">
                       <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <span className="text-primary/50 font-bold text-sm">{isRTL ? `${totalItems} كتاب` : `${totalItems} book(s)`}</span>
@@ -437,6 +453,20 @@ export function CheckoutPage() {
                   <h3 className={`text-lg font-black text-primary mb-6 ${isRTL ? 'font-arabic text-right' : 'font-cinematic'}`}>
                     {isRTL ? 'ملخص الطلب' : 'Order Summary'}
                   </h3>
+
+                  {/* Active Promotional Campaign Notice */}
+                  {isActive && campaign && (
+                    <div className="bg-[#8B1D3D]/5 border border-[#8B1D3D]/20 rounded-2xl p-3 mb-6 flex items-center justify-between shadow-xs">
+                      <div className="flex items-center gap-2">
+                        <Flame size={15} className="text-[#8B1D3D] fill-[#8B1D3D]" />
+                        <span className="text-xs font-black text-[#8B1D3D] font-arabic">{campaign.name}</span>
+                      </div>
+                      <span className="text-xs font-black bg-gradient-to-r from-[#8B1D3D] to-[#A81B34] text-white px-2 py-0.5 rounded-lg">
+                        -{discountPercent}%
+                      </span>
+                    </div>
+                  )}
+
                   <div className="space-y-3 mb-8">
                     {items.map((item) => (
                       <div key={item.bookId} className={`flex justify-between items-center ${isRTL ? 'flex-row-reverse' : ''}`}>

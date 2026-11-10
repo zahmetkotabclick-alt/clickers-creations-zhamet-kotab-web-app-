@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CampaignProvider } from "@/contexts/CampaignContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -40,6 +41,7 @@ const AdminBooks = lazy(() => import("@/pages/admin/AdminBooks").then(m => ({ de
 const AdminAuthors = lazy(() => import("@/pages/admin/AdminAuthors").then(m => ({ default: m.AdminAuthors })));
 const AdminBlog = lazy(() => import("@/pages/admin/AdminBlog").then(m => ({ default: m.AdminBlog })));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders").then(m => ({ default: m.AdminOrders })));
+const AdminCampaigns = lazy(() => import("@/pages/admin/AdminCampaigns").then(m => ({ default: m.AdminCampaigns })));
 const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics").then(m => ({ default: m.AdminAnalytics })));
 const AdminWorlds = lazy(() => import("@/pages/admin/AdminWorlds").then(m => ({ default: m.AdminWorlds })));
 const AdminExports = lazy(() => import("@/pages/admin/AdminExports").then(m => ({ default: m.AdminExports })));
@@ -101,6 +103,7 @@ function AdminRoutes() {
             <Route path="/admin/blog" component={AdminBlog} />
             <Route path="/admin/worlds" component={AdminWorlds} />
             <Route path="/admin/orders" component={AdminOrders} />
+            <Route path="/admin/campaigns" component={AdminCampaigns} />
             <Route path="/admin/analytics" component={AdminAnalytics} />
             <Route path="/admin/exports" component={AdminExports} />
             <Route path="/admin/media" component={AdminMedia} />
@@ -152,31 +155,33 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <CartProvider>
-            <LanguageProvider>
-              <HealthProvider>
-                <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                  <ScrollToTop />
-                  <Switch>
-                    {/* Admin panel — standalone layout */}
-                    <Route path="/admin/:rest*">
-                      <AdminRoutes />
-                    </Route>
-                    <Route path="/admin">
-                      <ProtectedRoute adminOnly>
-                        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>}>
-                          <AdminDashboard />
-                        </Suspense>
-                      </ProtectedRoute>
-                    </Route>
-                    {/* Public site */}
-                    <Route component={PublicLayout} />
-                  </Switch>
-                </WouterRouter>
-                <Toaster />
-              </HealthProvider>
-            </LanguageProvider>
-          </CartProvider>
+          <CampaignProvider>
+            <CartProvider>
+              <LanguageProvider>
+                <HealthProvider>
+                  <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                    <ScrollToTop />
+                    <Switch>
+                      {/* Admin panel — standalone layout */}
+                      <Route path="/admin/:rest*">
+                        <AdminRoutes />
+                      </Route>
+                      <Route path="/admin">
+                        <ProtectedRoute adminOnly>
+                          <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>}>
+                            <AdminDashboard />
+                          </Suspense>
+                        </ProtectedRoute>
+                      </Route>
+                      {/* Public site */}
+                      <Route component={PublicLayout} />
+                    </Switch>
+                  </WouterRouter>
+                  <Toaster />
+                </HealthProvider>
+              </LanguageProvider>
+            </CartProvider>
+          </CampaignProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

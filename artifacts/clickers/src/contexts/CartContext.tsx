@@ -1,10 +1,12 @@
-import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useReducer, useEffect, useMemo, type ReactNode } from 'react';
+import { useCampaign } from '@/contexts/CampaignContext';
 
 export interface CartItem {
   bookId: string;
   title: string;
   coverUrl: string;
   price: number;
+  originalPrice?: number;
   quantity: number;
   format: 'digital' | 'physical' | 'both';
 }
@@ -86,6 +88,7 @@ const CART_KEY = 'zahmet_kotab_cart';
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [], isOpen: false });
+  const { getPricing } = useCampaign();
 
   // Load persisted cart on mount
   useEffect(() => {
@@ -102,13 +105,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(CART_KEY, JSON.stringify(state.items));
   }, [state.items]);
 
-  const totalItems = state.items.reduce((acc, i) => acc + i.quantity, 0);
-  const totalPrice = state.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+  // Dynamically calculate effective pricing according to active campaign
+  const dynamicItems = useMemo(() => {
+    return state.items.map((item) => {
+      const pricing = getPricing(item.price, item.originalPrice);
+      return {
+        ...item,
+        price: pricing.effectivePrice,
+        originalPrice: pricing.originalPrice ?? undefined,
+      };
+    });
+  }, [state.items, getPricing]);
+
+  const totalItems = dynamicItems.reduce((acc, i) => acc + i.quantity, 0);
+  const totalPrice = dynamicItems.reduce((acc, i) => acc + i.price * i.quantity, 0);
 
   return (
     <CartContext.Provider
       value={{
-        items: state.items,
+        items: dynamicItems,
         isOpen: state.isOpen,
         totalItems,
         totalPrice,

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { BookOpen, Users, ShoppingBag, TrendingUp, Package, BarChart3 } from 'lucide-react';
+import { BookOpen, Users, ShoppingBag, TrendingUp, Package, BarChart3, Zap } from 'lucide-react';
 import { Link } from 'wouter';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { AdminLayout, AdminPageHeader, StatCard } from '@/components/admin/AdminLayout';
@@ -132,8 +132,9 @@ export function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
+          { href: '/admin/campaigns', label: 'Promotional Event', icon: Zap },
           { href: '/admin/books/new', label: 'Add Book', icon: BookOpen },
           { href: '/admin/authors', label: 'Manage Authors', icon: Users },
           { href: '/admin/orders', label: 'View Orders', icon: ShoppingBag },

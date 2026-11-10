@@ -5,6 +5,7 @@ import { Play, ChevronLeft, ChevronRight, Sparkles, BookOpen, Globe } from 'luci
 import { BookCard } from '@/components/BookCard';
 import { WorldCard } from '@/components/WorldCard';
 import { AuthorCard } from '@/components/AuthorCard';
+import { PromotionalEventSection } from '@/components/PromotionalEventSection';
 import { SectionHeader } from '@/components/SectionHeader';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useBooks, useAuthors, useWorlds } from '@/services/supabase.hooks';
@@ -227,6 +228,8 @@ export function Homepage() {
         type="website"
       />
       <HeroSection />
+
+      <PromotionalEventSection />
 
       <QuoteSection />
 

@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Menu, X, ShoppingCart, Globe, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { Search, Menu, X, ShoppingCart, Globe, User, LogOut, LayoutDashboard, Flame, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
+import { useCampaign } from '@/contexts/CampaignContext';
 
 export function Navbar() {
   const { t, isRTL, toggleLanguage } = useLanguage();
   const { profile, isAdmin, signOut } = useAuth();
   const { totalItems, toggleCart } = useCart();
+  const { campaign, isActive, discountPercent } = useCampaign();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -104,6 +106,28 @@ export function Navbar() {
 
             {/* Actions */}
             <div className="flex items-center gap-2.5 md:gap-3">
+              {/* Promotional Campaign Live Event Pill */}
+              {isActive && campaign && (
+                <Link href="/store">
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    whileHover={{ scale: 1.05, y: -1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="cursor-pointer flex items-center gap-1.5 sm:gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-gradient-to-r from-[#8B1D3D] via-[#A81B34] to-[#8B1D3D] text-white border border-[#C89D35]/50 shadow-[0_2px_12px_rgba(139,29,61,0.3)] transition-all"
+                    title={campaign.name}
+                  >
+                    <Flame size={14} className="text-[#FFDF79] fill-[#FFDF79] animate-pulse" />
+                    <span className="font-arabic font-black text-xs hidden sm:inline truncate max-w-[120px]">
+                      {campaign.name}
+                    </span>
+                    <span className="font-cinematic font-black text-[11px] bg-[#C89D35] text-[#2A0E17] px-1.5 py-0.5 rounded-md leading-none shadow-xs">
+                      -{discountPercent}%
+                    </span>
+                  </motion.div>
+                </Link>
+              )}
+
               {/* Language Toggle */}
               <motion.button
                 onClick={toggleLanguage}
@@ -251,6 +275,30 @@ export function Navbar() {
               dir={isRTL ? 'rtl' : 'ltr'}
             >
               <div className="w-12 h-1.5 bg-border rounded-full mx-auto mb-6" />
+              
+              {/* Mobile Active Promotional Event Banner */}
+              {isActive && campaign && (
+                <div className="mb-4">
+                  <Link href="/store">
+                    <div
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="cursor-pointer p-4 rounded-2xl bg-gradient-to-r from-[#8B1D3D] to-[#5E0E25] text-white border border-[#C89D35]/50 shadow-md flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Flame size={20} className="text-[#FFDF79] fill-[#FFDF79] animate-pulse" />
+                        <div>
+                          <p className="font-arabic font-black text-sm">{campaign.name}</p>
+                          <p className="text-white/70 text-[11px] font-arabic font-bold">خصم شامل على جميع الكتب</p>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 bg-[#C89D35] text-[#2A0E17] font-black font-cinematic text-sm rounded-xl">
+                        -{discountPercent}%
+                      </span>
+                    </div>
+                  </Link>
+                </div>
+              )}
+
               <div className="flex flex-col gap-1">
                 {navLinks.map((link, i) => (
                   <motion.div

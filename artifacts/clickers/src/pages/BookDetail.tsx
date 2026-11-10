@@ -9,6 +9,7 @@ import {
 import { BookCard } from '@/components/BookCard';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useCart } from '@/contexts/CartContext';
+import { useCampaign } from '@/contexts/CampaignContext';
 import { useBook, useBooks, useBookRating, useRateBook, useBookReviews } from '@/services/supabase.hooks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -34,6 +35,7 @@ export function BookDetail() {
   
   const { data: book, isLoading: bookLoading } = useBook(bookId);
   const { addItem, openCart } = useCart();
+  const { getPricing, isActive: isCampaignActive, campaign } = useCampaign();
   const { data: recommendedData } = useBooks({ genre: book?.genre });
   const { data: rating } = useBookRating(bookId);
   const { data: reviews, isLoading: reviewsLoading } = useBookReviews(bookId);
@@ -103,7 +105,8 @@ export function BookDetail() {
   const authorName = authorRecord ? (language === 'ar' ? authorRecord.name_ar : authorRecord.name_en) : 'Uncharted Pen';
   const description = language === 'ar' ? book.description_ar : book.description_en;
   const recommended = (recommendedData ?? []).filter((b: any) => b.id !== book.id).slice(0, 4);
-  const discount = book.original_price ? Math.round((1 - book.price / book.original_price) * 100) : null;
+  const pricing = getPricing(book.price, book.original_price);
+  const discount = pricing.discountPercent;
 
   const handleSubmitReview = async () => {
     if (!user?.id) {
@@ -287,8 +290,12 @@ export function BookDetail() {
                 <span className="px-4 py-1.5 bg-primary/5 text-primary text-xs font-black uppercase tracking-wider rounded-full border border-primary/10">
                   {language === 'ar' ? book.genre_ar : book.genre}
                 </span>
-                {discount && (
-                  <span className="px-4 py-1.5 bg-red-500 text-white text-xs font-black rounded-full shadow-md">
+                {pricing.hasDiscount && discount && (
+                  <span className={`px-4 py-1.5 text-xs font-black rounded-full shadow-md ${
+                    isCampaignActive
+                      ? 'bg-gradient-to-r from-[#C89D35] to-[#E6C362] text-[#2A0E17]'
+                      : 'bg-red-500 text-white'
+                  }`}>
                     -{discount}%
                   </span>
                 )}
@@ -321,11 +328,11 @@ export function BookDetail() {
               <div className="flex flex-wrap items-center gap-6 sm:gap-8 mb-8">
                 <div className="flex items-baseline gap-3">
                   <span className="text-4xl sm:text-5xl font-black text-primary drop-shadow-sm font-arabic">
-                    {book.price} <span className="text-lg sm:text-xl text-primary/60 font-bold uppercase">{isRTL ? 'ج.م' : 'EGP'}</span>
+                    {pricing.effectivePrice} <span className="text-lg sm:text-xl text-primary/60 font-bold uppercase">{isRTL ? 'ج.م' : 'EGP'}</span>
                   </span>
-                  {book.original_price && book.original_price > book.price && (
+                  {pricing.originalPrice && (
                     <span className="text-xl sm:text-2xl text-primary/30 line-through font-bold font-arabic">
-                      {book.original_price} {isRTL ? 'ج.م' : 'EGP'}
+                      {pricing.originalPrice} {isRTL ? 'ج.م' : 'EGP'}
                     </span>
                   )}
                 </div>
@@ -337,7 +344,7 @@ export function BookDetail() {
                         bookId: book.id,
                         title: title,
                         coverUrl: book.cover_url || '',
-                        price: book.price,
+                        price: pricing.effectivePrice,
                         quantity: 1,
                         format: book.format as 'digital' | 'physical' | 'both',
                       });

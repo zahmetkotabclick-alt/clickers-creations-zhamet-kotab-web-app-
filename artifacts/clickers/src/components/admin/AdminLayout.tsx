@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, BookOpen, Users, Globe, PenTool,
-  ShoppingBag, BarChart3, Download, LogOut, ChevronRight, Play, Bell,
+  ShoppingBag, BarChart3, Download, LogOut, ChevronRight, Play, Bell, Zap,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminOrderNotifications, type NewOrderPayload } from '@/hooks/useAdminOrderNotifications';
@@ -20,6 +20,7 @@ const navItems = [
   { href: '/admin/worlds',    label: 'Worlds',          labelAr: 'العوالم',        icon: Globe },
   { href: '/admin/blog',      label: 'Blog',            labelAr: 'المدونة',        icon: PenTool },
   { href: '/admin/orders',    label: 'Orders',          labelAr: 'الطلبات',        icon: ShoppingBag },
+  { href: '/admin/campaigns', label: 'Events & Sales',  labelAr: 'الفعاليات والعروض', icon: Zap },
   { href: '/admin/analytics', label: 'Analytics',       labelAr: 'التحليلات',      icon: BarChart3 },
   { href: '/admin/media',     label: 'Media Hub',       labelAr: 'الوسائط',        icon: Play },
   { href: '/admin/exports',   label: 'Export Reports',  labelAr: 'تصدير التقارير', icon: Download },

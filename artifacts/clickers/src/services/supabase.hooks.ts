@@ -241,33 +241,71 @@ export function useCreateOrder() {
       transactionId?: string;
       notes?: string;
     }) => {
-      // SECURITY: Fetch current official prices from the database to prevent tampering
+      // 1. TRUSTED BACKEND ORDER CREATION: Call server endpoint for verified pricing
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      if (token) {
+        try {
+          const res = await fetch('/api/orders/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              items: payload.items,
+              paymentMethod: payload.paymentMethod,
+              shippingAddress: payload.shippingAddress,
+              transactionId: payload.transactionId,
+              notes: payload.notes,
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.order) return data.order;
+          } else {
+            const errJson = await res.json().catch(() => ({}));
+            if (errJson.error) {
+              throw new Error(errJson.error);
+            }
+          }
+        } catch (serverErr: any) {
+          // If server threw a validation error, bubble it up to user
+          if (serverErr.message && !serverErr.message.includes('fetch')) {
+            throw serverErr;
+          }
+          console.warn('[Checkout] Backend orders endpoint unavailable, using secure client fallback:', serverErr);
+        }
+      }
+
+      // 2. FALLBACK: Fetch official prices from Supabase
       const bookIds = payload.items.map(i => i.bookId);
       const { data: currentBooks, error: fetchErr } = await supabase
         .from('books')
-        .select('id, price')
+        .select('id, price, original_price')
         .in('id', bookIds);
       
       if (fetchErr || !currentBooks) throw new Error('Security: Failed to verify item pricing');
 
-      // SECURITY: Calculate true total based on database prices, not frontend input
       let validatedTotal = 0;
       const validatedItems = payload.items.map(item => {
         const book = (currentBooks as any[]).find(b => b.id === item.bookId);
         if (!book) throw new Error('Security: Invalid book data in transaction');
-        validatedTotal += book.price * item.quantity;
+        const priceNum = Number(book.price);
+        validatedTotal += priceNum * item.quantity;
         return {
           book_id: item.bookId,
           quantity: item.quantity,
-          unit_price: book.price
+          unit_price: priceNum
         };
       });
 
-      // Insert Order with validated data
       const { data: order, error: orderErr } = await (supabase.from('orders') as any)
         .insert({
           user_id: payload.userId,
-          total_amount: validatedTotal,
+          total_amount: Number(validatedTotal.toFixed(2)),
           payment_method: payload.paymentMethod,
           shipping_address: payload.shippingAddress,
           transaction_id: payload.transactionId,
@@ -279,7 +317,6 @@ export function useCreateOrder() {
       
       if (orderErr) throw orderErr;
 
-      // Insert Order Items with validated pricing
       const orderItems = validatedItems.map(i => ({
         ...i,
         order_id: (order as any).id
