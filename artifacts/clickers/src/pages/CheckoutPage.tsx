@@ -135,7 +135,16 @@ export function CheckoutPage() {
                             {item.format === 'digital' ? (isRTL ? 'نسخة رقمية' : 'Digital') : (isRTL ? 'نسخة مطبوعة' : 'Physical')}
                           </p>
                           <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-                            <span className="text-accent font-black text-lg">{(item.price * item.quantity).toFixed(2)} <span className="text-xs text-primary/40">{t.common.currency}</span></span>
+                            <div className={`flex items-baseline gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                              <span className="text-accent font-black text-lg">
+                                {(item.price * item.quantity).toFixed(2)} <span className="text-xs text-primary/40">{t.common.currency}</span>
+                              </span>
+                              {item.originalPrice && item.originalPrice > item.price && (
+                                <span className="text-xs text-primary/30 line-through font-bold">
+                                  {(item.originalPrice * item.quantity).toFixed(2)} {t.common.currency}
+                                </span>
+                              )}
+                            </div>
                             <span className="text-primary/40 text-sm font-bold">×{item.quantity}</span>
                           </div>
                         </div>
@@ -471,7 +480,14 @@ export function CheckoutPage() {
                     {items.map((item) => (
                       <div key={item.bookId} className={`flex justify-between items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <span className={`text-primary/70 font-bold text-sm truncate flex-1 ${isRTL ? 'text-right' : ''}`}>{item.title}</span>
-                        <span className="text-primary font-black text-sm ml-4">{(item.price * item.quantity).toFixed(2)}</span>
+                        <div className={`flex items-baseline gap-2 ml-4 ${isRTL ? 'flex-row-reverse mr-4 ml-0' : ''}`}>
+                          <span className="text-primary font-black text-sm">{(item.price * item.quantity).toFixed(2)}</span>
+                          {item.originalPrice && item.originalPrice > item.price && (
+                            <span className="text-[11px] text-primary/30 line-through font-bold">
+                              {(item.originalPrice * item.quantity).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ))}
                     <div className="h-px bg-border pt-2" />

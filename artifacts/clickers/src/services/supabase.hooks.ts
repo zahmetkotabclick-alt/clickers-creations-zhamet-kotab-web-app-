@@ -289,16 +289,37 @@ export function useCreateOrder() {
       
       if (fetchErr || !currentBooks) throw new Error('Security: Failed to verify item pricing');
 
+      // Query active campaign for fallback price calculation
+      let activeDiscount = 0;
+      try {
+        const campRes = await fetch('/api/campaign/active');
+        if (campRes.ok) {
+          const campData = await campRes.json();
+          if (campData?.isActive && campData?.campaign?.discountPercent) {
+            activeDiscount = Number(campData.campaign.discountPercent);
+          }
+        }
+      } catch {
+        // ignore
+      }
+
       let validatedTotal = 0;
       const validatedItems = payload.items.map(item => {
         const book = (currentBooks as any[]).find(b => b.id === item.bookId);
         if (!book) throw new Error('Security: Invalid book data in transaction');
-        const priceNum = Number(book.price);
+        const dbPrice = Number(book.price);
+        const dbOrig = book.original_price ? Number(book.original_price) : dbPrice;
+        let priceNum = dbPrice;
+        if (activeDiscount > 0 && dbPrice > 0) {
+          const baseRef = (dbOrig && dbOrig > dbPrice) ? dbOrig : dbPrice;
+          const campPrice = Math.round(baseRef * (1 - activeDiscount / 100) * 100) / 100;
+          priceNum = Math.min(dbPrice, campPrice);
+        }
         validatedTotal += priceNum * item.quantity;
         return {
           book_id: item.bookId,
           quantity: item.quantity,
-          unit_price: priceNum
+          unit_price: Number(priceNum.toFixed(2))
         };
       });
 

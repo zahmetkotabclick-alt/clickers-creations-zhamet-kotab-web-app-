@@ -94,9 +94,16 @@ export function CartDrawer() {
                           <h4 className={`font-bold text-primary text-sm line-clamp-2 mb-2 ${isRTL ? 'font-arabic text-right' : ''}`}>
                             {item.title}
                           </h4>
-                          <p className="text-accent font-black text-sm">
-                            {item.price} <span className="text-xs opacity-70">{t.common.currency}</span>
-                          </p>
+                          <div className={`flex items-baseline gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
+                            <p className="text-accent font-black text-sm">
+                              {item.price} <span className="text-xs opacity-70">{t.common.currency}</span>
+                            </p>
+                            {item.originalPrice && item.originalPrice > item.price && (
+                              <span className="text-xs text-primary/30 line-through font-bold">
+                                {item.originalPrice} {t.common.currency}
+                              </span>
+                            )}
+                          </div>
 
                           <div className={`flex items-center gap-3 mt-3 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
                             {/* Quantity Controls */}

@@ -345,6 +345,8 @@ export function BookDetail() {
                         title: title,
                         coverUrl: book.cover_url || '',
                         price: pricing.effectivePrice,
+                        basePrice: Number(book.price),
+                        originalPrice: book.original_price ? Number(book.original_price) : Number(book.price),
                         quantity: 1,
                         format: book.format as 'digital' | 'physical' | 'both',
                       });

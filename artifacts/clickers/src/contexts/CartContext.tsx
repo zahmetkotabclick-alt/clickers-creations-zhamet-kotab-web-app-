@@ -1,11 +1,13 @@
 import { createContext, useContext, useReducer, useEffect, useMemo, type ReactNode } from 'react';
 import { useCampaign } from '@/contexts/CampaignContext';
+import { useBooks, type Book } from '@/services/supabase.hooks';
 
 export interface CartItem {
   bookId: string;
   title: string;
   coverUrl: string;
   price: number;
+  basePrice?: number;
   originalPrice?: number;
   quantity: number;
   format: 'digital' | 'physical' | 'both';
@@ -35,7 +37,12 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           ...state,
           items: state.items.map((i) =>
             i.bookId === action.payload.bookId
-              ? { ...i, quantity: i.quantity + 1 }
+              ? {
+                  ...i,
+                  quantity: i.quantity + action.payload.quantity,
+                  basePrice: action.payload.basePrice ?? i.basePrice,
+                  originalPrice: action.payload.originalPrice ?? i.originalPrice,
+                }
               : i
           ),
         };
@@ -89,6 +96,17 @@ const CART_KEY = 'zahmet_kotab_cart';
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [], isOpen: false });
   const { getPricing } = useCampaign();
+  const { data: allBooks } = useBooks();
+
+  const booksMap = useMemo(() => {
+    const map = new Map<string, Book>();
+    if (allBooks) {
+      for (const b of allBooks) {
+        map.set(b.id, b);
+      }
+    }
+    return map;
+  }, [allBooks]);
 
   // Load persisted cart on mount
   useEffect(() => {
@@ -105,17 +123,56 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(CART_KEY, JSON.stringify(state.items));
   }, [state.items]);
 
+  // Self-healing migration: heal any cart items in localStorage that had missing or incorrect basePrice/originalPrice
+  useEffect(() => {
+    if (!allBooks || allBooks.length === 0 || state.items.length === 0) return;
+    let needsUpdate = false;
+    const updated = state.items.map((item) => {
+      const db = booksMap.get(item.bookId);
+      if (db) {
+        const correctBase = Number(db.price);
+        const correctOrig = db.original_price ? Number(db.original_price) : Number(db.price);
+        if (item.basePrice !== correctBase || item.originalPrice !== correctOrig) {
+          needsUpdate = true;
+          return {
+            ...item,
+            basePrice: correctBase,
+            originalPrice: correctOrig,
+          };
+        }
+      }
+      return item;
+    });
+
+    if (needsUpdate) {
+      dispatch({ type: 'LOAD', payload: updated });
+    }
+  }, [allBooks, booksMap, state.items]);
+
   // Dynamically calculate effective pricing according to active campaign
   const dynamicItems = useMemo(() => {
     return state.items.map((item) => {
-      const pricing = getPricing(item.price, item.originalPrice);
+      const dbBook = booksMap.get(item.bookId);
+
+      // Determine the authoritative pre-campaign reference price
+      const basePrice = dbBook
+        ? Number(dbBook.price)
+        : (item.basePrice !== undefined ? item.basePrice : item.price);
+
+      const originalRefPrice = dbBook
+        ? (dbBook.original_price ? Number(dbBook.original_price) : Number(dbBook.price))
+        : (item.originalPrice !== undefined ? item.originalPrice : basePrice);
+
+      const pricing = getPricing(basePrice, originalRefPrice);
+
       return {
         ...item,
         price: pricing.effectivePrice,
-        originalPrice: pricing.originalPrice ?? undefined,
+        basePrice,
+        originalPrice: pricing.originalPrice ?? (originalRefPrice > pricing.effectivePrice ? originalRefPrice : undefined),
       };
     });
-  }, [state.items, getPricing]);
+  }, [state.items, booksMap, getPricing]);
 
   const totalItems = dynamicItems.reduce((acc, i) => acc + i.quantity, 0);
   const totalPrice = dynamicItems.reduce((acc, i) => acc + i.price * i.quantity, 0);
