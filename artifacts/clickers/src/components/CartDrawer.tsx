@@ -144,13 +144,19 @@ export function CartDrawer() {
             {/* Footer */}
             {items.length > 0 && (
               <div className="p-6 border-t border-border bg-white">
-                <div className={`flex items-center justify-between mb-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex items-center justify-between mb-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <span className={`text-primary/50 font-bold text-sm uppercase tracking-wider ${isRTL ? 'font-arabic' : ''}`}>
                     {isRTL ? 'الإجمالي' : 'Total'}
                   </span>
                   <span className="text-primary font-black text-2xl">
                     {totalPrice.toFixed(2)}{' '}
                     <span className="text-sm font-bold text-primary/50">{t.common.currency}</span>
+                  </span>
+                </div>
+                <div className={`flex items-center justify-between text-xs text-primary/50 mb-5 px-0.5 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <span>{isRTL ? 'مصاريف الشحن' : 'Shipping'}</span>
+                  <span className="text-[#8B1D3D] font-bold bg-[#8B1D3D]/5 border border-[#8B1D3D]/15 px-2 py-0.5 rounded-md">
+                    {isRTL ? 'تُحدد هاتفياً عند تأكيد الطلب' : 'TBD by phone support'}
                   </span>
                 </div>
                 <Link href="/checkout">

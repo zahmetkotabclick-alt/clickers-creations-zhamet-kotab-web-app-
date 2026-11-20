@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'wouter';
-import { ShoppingBag, CheckCircle, CreditCard, ArrowRight, Trash2, AlertCircle, ExternalLink, Copy, Check, Flame } from 'lucide-react';
+import { ShoppingBag, CheckCircle, CreditCard, ArrowRight, Trash2, AlertCircle, ExternalLink, Copy, Check, Flame, Truck } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCampaign } from '@/contexts/CampaignContext';
@@ -176,13 +176,29 @@ export function CheckoutPage() {
                         <span className="text-primary/50 font-bold text-sm">{isRTL ? `${totalItems} كتاب` : `${totalItems} book(s)`}</span>
                         <span className="text-primary font-bold">{totalPrice.toFixed(2)} {t.common.currency}</span>
                       </div>
-                      <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <span className="text-primary/50 font-bold text-sm">{isRTL ? 'الشحن' : 'Shipping'}</span>
-                        <span className="text-green-600 font-black text-sm">{isRTL ? 'مجاني' : 'Free'}</span>
+                      <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <span className="text-primary/50 font-bold text-sm">{isRTL ? 'مصاريف الشحن' : 'Shipping Fee'}</span>
+                        <span className="text-[#8B1D3D] font-bold text-xs bg-[#8B1D3D]/5 border border-[#8B1D3D]/20 px-2.5 py-1 rounded-lg">
+                          {isRTL ? 'يُحدد عند التواصل هاتفياً' : 'TBD upon phone contact'}
+                        </span>
                       </div>
+
+                      {/* Professional shipping explanation callout */}
+                      <div className={`p-3.5 bg-amber-50/80 border border-amber-200/70 rounded-2xl flex items-start gap-2.5 ${isRTL ? 'flex-row-reverse text-right' : 'text-left'}`}>
+                        <Truck size={16} className="text-amber-700 flex-shrink-0 mt-0.5" />
+                        <p className={`text-[11px] text-amber-900/90 leading-relaxed font-bold ${isRTL ? 'font-arabic' : ''}`}>
+                          {isRTL
+                            ? 'سيقوم فريق خدمة العملاء بالتواصل معكم هاتفياً لتأكيد تفاصيل العنوان وتحديد رسوم الشحن بدقة حسب المحافظة.'
+                            : 'Our customer care team will contact you by phone to confirm delivery details and specify the exact shipping fee according to your governorate.'}
+                        </p>
+                      </div>
+
                       <div className="h-px bg-border" />
                       <div className={`flex justify-between items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <span className="text-primary font-black">{isRTL ? 'الإجمالي' : 'Total'}</span>
+                        <div>
+                          <span className="text-primary font-black block">{isRTL ? 'الإجمالي' : 'Total'}</span>
+                          <span className="text-[11px] text-primary/40 font-bold block">{isRTL ? '(غير شامل رسوم الشحن)' : '(Excl. shipping)'}</span>
+                        </div>
                         <span className="text-primary font-black text-2xl">{totalPrice.toFixed(2)} <span className="text-sm text-primary/40">{t.common.currency}</span></span>
                       </div>
                     </div>
@@ -490,9 +506,18 @@ export function CheckoutPage() {
                         </div>
                       </div>
                     ))}
+                    <div className={`flex items-center justify-between pt-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <span className="text-primary/50 font-bold text-sm">{isRTL ? 'مصاريف الشحن' : 'Shipping'}</span>
+                      <span className="text-[#8B1D3D] font-bold text-xs bg-[#8B1D3D]/5 border border-[#8B1D3D]/20 px-2.5 py-0.5 rounded-lg">
+                        {isRTL ? 'يُحدد عند التواصل' : 'TBD via support'}
+                      </span>
+                    </div>
                     <div className="h-px bg-border pt-2" />
                     <div className={`flex justify-between items-center pt-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-primary font-black">{isRTL ? 'الإجمالي' : 'Total'}</span>
+                      <div>
+                        <span className="text-primary font-black block">{isRTL ? 'الإجمالي' : 'Total'}</span>
+                        <span className="text-[11px] text-primary/40 font-bold block">{isRTL ? '(غير شامل رسوم الشحن)' : '(Excl. shipping)'}</span>
+                      </div>
                       <span className="text-primary font-black text-xl">{totalPrice.toFixed(2)} <span className="text-sm text-primary/40">{t.common.currency}</span></span>
                     </div>
                   </div>
